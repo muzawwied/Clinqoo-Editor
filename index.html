@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Clincoo Code — editor kode full-stack yang lengkap, rapi & modern. Bekerja langsung di browser.">
+<title>Clincoo Code — Editor Kode Full-Stack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a84ff'/%3E%3Cpath d='M12 10l-5 6 5 6M20 10l5 6-5 6' stroke='white' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root{
+  --accent:#0a84ff; --accent-soft:rgba(10,132,255,.16);
+  --bg:#141416; --bg2:#1a1a1d; --bg3:#202024; --bg4:#26262b;
+  --line:#2c2c33; --line2:#3a3a42;
+  --text:#d6d6dc; --text2:#9a9aa4; --text3:#6c6c76;
+  --tab-bg:#1d1d21; --editor-bg:#1a1a1d;
+  --status:#0a84ff;
+  --ok:#2fbf71; --warn:#e5b454; --err:#e55454;
+  --shadow:0 12px 40px rgba(0,0,0,.5);
+  --radius:10px;
+}
+body.light{
+  --bg:#f4f4f6; --bg2:#ececef; --bg3:#e4e4e8; --bg4:#dcdce2;
+  --line:#d8d8de; --line2:#c8c8d0;
+  --text:#24242a; --text2:#5c5c66; --text3:#90909a;
+  --tab-bg:#e9e9ee; --editor-bg:#ffffff;
+  --shadow:0 12px 40px rgba(0,0,0,.18);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-size:13px;background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+button{font-family:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,select{font-family:inherit;color:var(--text)}
+svg{flex-shrink:0}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:6px;border:2px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-thumb:hover{background:var(--text3);border:2px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-corner{background:transparent}
+
+/* ===== Title bar ===== */
+#titlebar{height:44px;background:var(--bg2);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 10px;gap:14px;flex-shrink:0;user-select:none}
+#logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13.5px;letter-spacing:-.01em}
+#logo .logo-ic{width:24px;height:24px;border-radius:7px;background:var(--accent);display:grid;place-items:center;color:#fff}
+#logo b{color:var(--text)}#logo span{color:var(--accent)}
+#menubar{display:flex;gap:2px}
+.menu-btn{padding:5px 9px;border-radius:6px;color:var(--text2);font-size:12.5px;font-weight:500}
+.menu-btn:hover,.menu-btn.open{background:var(--bg4);color:var(--text)}
+#titlebar .spacer{flex:1}
+.tb-btn{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;color:var(--text2)}
+.tb-btn:hover{background:var(--bg4);color:var(--text)}
+.tb-btn.active{background:var(--accent-soft);color:var(--accent)}
+#run-btn{display:flex;align-items:center;gap:7px;height:32px;padding:0 13px;border-radius:8px;background:var(--accent);color:#fff;font-weight:600;font-size:12.5px;transition:.15s}
+#run-btn:hover{filter:brightness(1.12)}
+#searchbox{width:230px;height:30px;background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:0 11px;font-size:12.5px;outline:none;transition:.15s}
+#searchbox:focus{border-color:var(--accent);width:290px}
+#searchbox::placeholder{color:var(--text3)}
+
+/* dropdown */
+.dropdown{position:fixed;min-width:210px;background:var(--bg3);border:1px solid var(--line2);border-radius:var(--radius);box-shadow:var(--shadow);padding:6px;z-index:900;display:none}
+.dropdown.show{display:block}
+.dd-item{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:7px 11px;border-radius:7px;font-size:12.5px;color:var(--text);cursor:pointer;white-space:nowrap}
+.dd-item:hover{background:var(--accent-soft);color:var(--accent)}
+.dd-item .kbd{color:var(--text3);font-size:11px;font-family:'Fira Code',monospace}
+.dd-item.disabled{opacity:.4;pointer-events:none}
+.dd-sep{height:1px;background:var(--line);margin:5px 8px}
+
+/* ===== Main layout ===== */
+#main{flex:1;display:flex;min-height:0}
+#activitybar{width:48px;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:4px;flex-shrink:0}
+.act-btn{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:var(--text3);position:relative;transition:.15s}
+.act-btn:hover{color:var(--text)}
+.act-btn.active{color:var(--accent)}
+.act-btn.active::before{content:'';position:absolute;left:-8px;width:3px;height:24px;background:var(--accent);border-radius:0 3px 3px 0}
+.act-btn .badge{position:absolute;top:4px;right:4px;min-width:15px;height:15px;padding:0 4px;border-radius:8px;background:var(--accent);color:#fff;font-size:9.5px;font-weight:700;display:grid;place-items:center}
+#activitybar .spacer{flex:1}
+
+#sidebar{width:252px;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;flex-shrink:0;min-width:0;transition:width .15s}
+#sidebar.hidden{display:none}
+#sb-resize{width:4px;cursor:col-resize;flex-shrink:0;background:transparent;transition:.15s}
+#sb-resize:hover{background:var(--accent)}
+.panel-head{height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 8px 0 14px;flex-shrink:0}
+.panel-head .t{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text2)}
+.panel-head .tools{display:flex;gap:1px}
+.ph-btn{width:26px;height:26px;border-radius:6px;display:grid;place-items:center;color:var(--text3)}
+.ph-btn:hover{background:var(--bg4);color:var(--text)}
+.panel-body{flex:1;overflow:auto;padding:6px 8px 14px;min-height:0}
+.panel{display:none}
+.panel.show{display:block}
+
+/* file tree */
+.tree-item{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:12.8px;color:var(--text);white-space:nowrap;user-select:none}
+.tree-item:hover{background:var(--bg4)}
+.tree-item.active{background:var(--accent-soft);color:var(--accent)}
+.tree-item .tw{width:12px;display:grid;place-items:center;color:var(--text3);transition:transform .12s}
+.tree-item .tw.open{transform:rotate(90deg)}
+.tree-item .nm{flex:1;overflow:hidden;text-overflow:ellipsis}
+.tree-item .ico{color:var(--text3)}
+.tree-item .badge{font-size:9.5px;padding:1px 6px;border-radius:6px;background:var(--bg4);color:var(--text2);margin-right:4px}
+.tree-item .badge.M{background:rgba(229,180,84,.16);color:var(--warn)}
+.tree-item .badge.U{background:rgba(10,132,255,.16);color:var(--accent)}
+.tree-kids{margin-left:14px;border-left:1px solid var(--line);padding-left:2px}
+.empty-note{color:var(--text3);font-size:12px;padding:10px 8px;text-align:center;line-height:1.6}
+
+/* search panel */
+.search-row{display:flex;flex-direction:column;gap:8px;padding:2px 4px 10px}
+.search-input{width:100%;height:30px;background:var(--bg3);border:1px solid var(--line);border-radius:7px;padding:0 10px;font-size:12.5px;outline:none}
+.search-input:focus{border-color:var(--accent)}
+.sr-file{margin-top:8px;font-weight:600;font-size:12px;display:flex;align-items:center;gap:6px;color:var(--text)}
+.sr-line{display:flex;gap:8px;padding:3px 6px 3px 20px;border-radius:5px;cursor:pointer;font-family:'Fira Code',monospace;font-size:11.5px;color:var(--text2);overflow:hidden;white-space:nowrap}
+.sr-line:hover{background:var(--bg4);color:var(--text)}
+.sr-line .ln{color:var(--accent);min-width:24px;text-align:right}
+
+/* git panel */
+.git-row{display:flex;flex-direction:column;gap:8px}
+.git-input{width:100%;height:56px;resize:none;background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;outline:none;font-family:inherit}
+.git-input:focus{border-color:var(--accent)}
+.git-commit{height:30px;border-radius:7px;background:var(--accent);color:#fff;font-weight:600;font-size:12.5px;display:flex;align-items:center;justify-content:center;gap:7px}
+.git-commit:hover{filter:brightness(1.1)}
+.git-count{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:7px;padding:4px 2px}
+
+/* extensions */
+.ext-card{display:flex;gap:10px;padding:9px;border-radius:9px;cursor:default;margin-bottom:6px}
+.ext-card:hover{background:var(--bg4)}
+.ext-ic{width:38px;height:38px;border-radius:9px;display:grid;place-items:center;font-weight:800;font-size:15px;color:#fff;flex-shrink:0}
+.ext-nm{font-weight:600;font-size:12.5px}
+.ext-ds{font-size:11.5px;color:var(--text2);line-height:1.45;margin-top:2px}
+.ext-chip{font-size:10px;font-weight:700;color:var(--ok);background:rgba(47,191,113,.13);padding:2px 8px;border-radius:6px;margin-top:5px;display:inline-block}
+
+/* ===== Editor area ===== */
+#editor-col{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--editor-bg)}
+#tabsbar{height:38px;background:var(--tab-bg);display:flex;align-items:stretch;border-bottom:1px solid var(--line);flex-shrink:0}
+#tabs{display:flex;overflow-x:auto;scrollbar-width:none}
+#tabs::-webkit-scrollbar{display:none}
+.tab{display:flex;align-items:center;gap:7px;padding:0 10px 0 13px;font-size:12.3px;color:var(--text2);cursor:pointer;border-right:1px solid var(--line);position:relative;white-space:nowrap;max-width:190px}
+.tab .nm{overflow:hidden;text-overflow:ellipsis}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--text);background:var(--editor-bg)}
+.tab.active::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent)}
+.tab .dirty{width:7px;height:7px;border-radius:50%;background:var(--text2);display:none}
+.tab.dirty .dirty{display:block}
+.tab .x{width:18px;height:18px;border-radius:5px;display:grid;place-items:center;color:transparent}
+.tab:hover .x{color:var(--text3)}
+.tab .x:hover{background:var(--bg4);color:var(--text)}
+#tab-actions{margin-left:auto;display:flex;align-items:center;gap:2px;padding:0 8px}
+
+#monaco-wrap{flex:1;position:relative;min-height:0}
+#monaco{position:absolute;inset:0}
+
+/* welcome */
+#welcome{position:absolute;inset:0;display:none;place-items:center;background:var(--editor-bg);text-align:center;padding:24px;overflow:auto}
+#welcome.show{display:grid}
+#welcome .big{font-size:44px;font-weight:800;letter-spacing:-.03em}
+#welcome .big b{color:var(--accent)}
+#welcome .sub{color:var(--text2);margin:8px 0 26px;font-size:13.5px}
+#welcome .grid{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+.w-card{background:var(--bg3);border:1px solid var(--line);border-radius:14px;padding:16px 22px;min-width:190px;cursor:pointer;transition:.15s}
+.w-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.w-card .k{font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px;color:var(--text)}
+.w-card .d{font-size:11.5px;color:var(--text3);margin-top:4px}
+.w-keys{margin-top:26px;display:flex;gap:18px;flex-wrap:wrap;justify-content:center;color:var(--text3);font-size:11.5px}
+kbd{font-family:'Fira Code',monospace;background:var(--bg4);border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;padding:2px 6px;font-size:10.5px;color:var(--text2)}
+
+/* ===== Bottom panel ===== */
+#bottom{height:210px;min-height:0;background:var(--bg2);border-top:1px solid var(--line);display:flex;flex-direction:column;flex-shrink:0}
+#bottom.hidden{display:none}
+#bt-resize{height:4px;cursor:row-resize;background:transparent;flex-shrink:0;transition:.15s}
+#bt-resize:hover{background:var(--accent)}
+#bt-tabs{height:34px;display:flex;align-items:center;gap:2px;padding:0 10px;border-bottom:1px solid var(--line);flex-shrink:0}
+.bt-tab{display:flex;align-items:center;gap:6px;padding:5px 12px;font-size:12px;color:var(--text2);border-radius:7px}
+.bt-tab:hover{color:var(--text)}
+.bt-tab.active{color:var(--text);background:var(--bg4)}
+.bt-tab .cnt{font-size:10px;background:var(--err);color:#fff;border-radius:7px;padding:0 6px;font-weight:700}
+#bt-tabs .spacer{flex:1}
+#bt-body{flex:1;overflow:hidden;display:flex;min-height:0}
+.bt-panel{display:none;flex:1;min-width:0}
+.bt-panel.show{display:flex}
+
+/* terminal */
+#term{flex:1;display:flex;flex-direction:column;background:#0c0c0e;font-family:'Fira Code',monospace;font-size:12px;line-height:1.65;overflow:hidden}
+body.light #term{background:#101014}
+#term-out{flex:1;overflow-y:auto;padding:10px 14px 4px;white-space:pre-wrap;word-break:break-word}
+#term-out .cmd{color:#7ec3f0}
+#term-out .ok{color:#5ee39a}
+#term-out .err{color:#ff7b72}
+#term-out .dim{color:#7d7d88}
+#term-in{display:flex;align-items:center;gap:8px;padding:2px 14px 12px}
+#term-prompt{color:#5ee39a;font-weight:600;white-space:nowrap}
+#term-input{flex:1;background:none;border:none;outline:none;color:#e6e6ea;font-family:'Fira Code',monospace;font-size:12px;caret-color:#5ee39a}
+
+/* problems/output */
+#problems,#output{flex:1;overflow-y:auto;padding:10px 14px;font-size:12.3px}
+.prob-row{display:flex;align-items:center;gap:9px;padding:5px 6px;border-radius:6px;cursor:pointer}
+.prob-row:hover{background:var(--bg4)}
+.prob-row .msg{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.prob-row .file{color:var(--text3);font-family:'Fira Code',monospace;font-size:11px}
+.out-line{color:var(--text2);line-height:1.7}
+.out-line b{color:var(--accent)}
+
+/* ===== Status bar ===== */
+#statusbar{height:25px;background:var(--status);color:#fff;display:flex;align-items:center;font-size:11.5px;flex-shrink:0;user-select:none}
+#statusbar .sb{padding:0 10px;height:100%;display:flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap}
+#statusbar .sb:hover{background:rgba(255,255,255,.14)}
+#statusbar .spacer{flex:1}
+#statusbar .err-c{color:#ffd7d5}#statusbar .warn-c{color:#ffe9b3}
+body.light #statusbar{background:#0071e3}
+
+/* ===== Overlays ===== */
+#overlay-center{position:fixed;inset:0;z-index:950;display:none;align-items:flex-start;justify-content:center;padding-top:12vh;background:rgba(0,0,0,.35)}
+#overlay-center.show{display:flex}
+#palette{width:min(580px,92vw);background:var(--bg3);border:1px solid var(--line2);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+#palette-in{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+#palette-in input{flex:1;background:none;border:none;outline:none;font-size:14.5px;color:var(--text)}
+#palette-list{max-height:330px;overflow-y:auto;padding:6px}
+.pal-item{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:9px;cursor:pointer;font-size:13px}
+.pal-item .sub{color:var(--text3);font-size:11px;margin-left:auto;white-space:nowrap}
+.pal-item.sel{background:var(--accent-soft);color:var(--accent)}
+.pal-item.sel .sub{color:var(--accent)}
+
+#overlay-modal{position:fixed;inset:0;z-index:960;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45)}
+#overlay-modal.show{display:flex}
+.modal{width:min(460px,92vw);background:var(--bg3);border:1px solid var(--line2);border-radius:16px;box-shadow:var(--shadow);padding:20px 22px}
+.modal h3{font-size:15px;display:flex;align-items:center;gap:9px;margin-bottom:16px}
+.modal label{display:block;font-size:12px;color:var(--text2);font-weight:600;margin:13px 0 6px}
+.modal input[type=text],.modal select{width:100%;height:34px;background:var(--bg);border:1px solid var(--line2);border-radius:8px;padding:0 10px;font-size:12.8px;outline:none}
+.modal input[type=text]:focus{border-color:var(--accent)}
+.modal .row{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+.modal .hint{font-size:11px;color:var(--text3);margin-top:5px}
+.switch{position:relative;width:38px;height:21px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.switch .sl{position:absolute;inset:0;background:var(--line2);border-radius:21px;cursor:pointer;transition:.18s}
+.switch .sl::before{content:'';position:absolute;width:15px;height:15px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.18s}
+.switch input:checked+.sl{background:var(--accent)}
+.switch input:checked+.sl::before{transform:translateX(17px)}
+.btn{height:34px;padding:0 18px;border-radius:9px;font-weight:600;font-size:12.8px;display:inline-flex;align-items:center;gap:8px;justify-content:center}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.12)}
+.btn.ghost{background:var(--bg4);color:var(--text2)}
+.btn.ghost:hover{color:var(--text)}
+.btn.danger{background:rgba(229,84,84,.14);color:var(--err)}
+
+/* preview */
+#preview-modal .frame-wrap{width:min(1100px,94vw);height:min(720px,86vh);background:var(--bg3);border:1px solid var(--line2);border-radius:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
+#preview-head{height:46px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line)}
+#preview-head .url{flex:1;height:30px;background:var(--bg);border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;padding:0 12px;font-family:'Fira Code',monospace;font-size:11.5px;color:var(--text2);overflow:hidden;white-space:nowrap}
+#preview-frame{flex:1;border:none;background:#fff}
+
+/* context menu */
+#ctxmenu{position:fixed;z-index:980;display:none;min-width:180px}
+
+/* toast */
+#toast{position:fixed;bottom:38px;right:16px;z-index:990;display:flex;flex-direction:column;gap:8px}
+.toast-item{display:flex;align-items:center;gap:9px;background:var(--bg3);border:1px solid var(--line2);border-left:3px solid var(--ok);border-radius:10px;box-shadow:var(--shadow);padding:10px 16px;font-size:12.5px;animation:pop .18s ease}
+@keyframes pop{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+
+/* responsive */
+#hamb{display:none}
+@media (max-width:780px){
+  #menubar,#searchbox{display:none}
+  #hamb{display:grid}
+  #sidebar{position:fixed;left:48px;top:44px;bottom:25px;z-index:400;box-shadow:var(--shadow)}
+  #sidebar.hidden{display:none}
+  #bottom{height:180px}
+  #welcome .big{font-size:32px}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== TITLE BAR ===== -->
+<div id="titlebar">
+  <button class="tb-btn" id="hamb" onclick="toggleSidebar()" title="Panel samping">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+  </button>
+  <div id="logo"><div class="logo-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6l-4 6 4 6M16 6l4 6-4 6"/></svg></div><span>Clincoo<b style="color:var(--text)"> Code</b></span></div>
+  <nav id="menubar">
+    <button class="menu-btn" data-menu="m-file">Berkas</button>
+    <button class="menu-btn" data-menu="m-edit">Edit</button>
+    <button class="menu-btn" data-menu="m-view">Tampilan</button>
+    <button class="menu-btn" data-menu="m-tools">Alat</button>
+    <button class="menu-btn" data-menu="m-help">Bantuan</button>
+  </nav>
+  <div class="spacer"></div>
+  <input id="searchbox" placeholder="Cari cepat… (Ctrl+P)" readonly onclick="openPalette('files')">
+  <button id="run-btn" onclick="runPreview()" title="Jalankan pratinjau (F5)">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"/></svg> Jalankan
+  </button>
+  <button class="tb-btn" id="theme-btn" onclick="toggleTheme()" title="Ganti tema terang/gelap">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
+  </button>
+  <button class="tb-btn" onclick="openSettings()" title="Pengaturan">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 10.6 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
+</div>
+
+<!-- dropdown menus -->
+<div class="dropdown" id="m-file">
+  <div class="dd-item" onclick="newFileModal()">Berkas Baru <span class="kbd">Ctrl+N</span></div>
+  <div class="dd-item" onclick="openFileModal()">Buka Berkas <span class="kbd">Ctrl+P</span></div>
+  <div class="dd-sep"></div>
+  <div class="dd-item" onclick="saveActive()">Simpan <span class="kbd">Ctrl+S</span></div>
+  <div class="dd-item" onclick="saveAll()">Simpan Semua <span class="kbd">Ctrl+K S</span></div>
+  <div class="dd-sep"></div>
+  <div class="dd-item" onclick="closeTab(activePath)">Tutup Tab <span class="kbd">Ctrl+W</span></div>
+</div>
+<div class="dropdown" id="m-edit">
+  <div class="dd-item" onclick="edAction('undo')">Urungkan <span class="kbd">Ctrl+Z</span></div>
+  <div class="dd-item" onclick="edAction('redo')">Ulangi <span class="kbd">Ctrl+Y</span></div>
+  <div class="dd-sep"></div>
+  <div class="dd-item" onclick="edAction('quickCommand')">Palette Perintah <span class="kbd">Ctrl+Shift+P</span></div>
+  <div class="dd-item" onclick="edAction('actions.find')">Cari & Ganti <span class="kbd">Ctrl+F</span></div>
+</div>
+<div class="dropdown" id="m-view">
+  <div class="dd-item" onclick="toggleSidebar()">Panel Samping <span class="kbd">Ctrl+B</span></div>
+  <div class="dd-item" onclick="toggleBottom()">Terminal <span class="kbd">Ctrl+`</span></div>
+  <div class="dd-item" onclick="toggleTheme()">Ganti Tema</div>
+  <div class="dd-sep"></div>
+  <div class="dd-item" onclick="toggleZen()">Mode Zen</div>
+</div>
+<div class="dropdown" id="m-tools">
+  <div class="dd-item" onclick="edAction('editor.action.formatDocument')">Format Dokumen <span class="kbd">Shift+Alt+F</span></div>
+  <div class="dd-item" onclick="runPreview()">Jalankan Pratinjau <span class="kbd">F5</span></div>
+  <div class="dd-item" onclick="termRun('git status')">Cek Status Git</div>
+  <div class="dd-sep"></div>
+  <div class="dd-item" onclick="openSettings()">Pengaturan Editor</div>
+</div>
+<div class="dropdown" id="m-help">
+  <div class="dd-item" onclick="showWelcome()">Halaman Selamat Datang</div>
+  <div class="dd-item" onclick="termRun('help')">Panduan Terminal</div>
+  <div class="dd-item" onclick="toast('Clincoo Code v1.0 — dibuat dengan ❤️')">Tentang Clincoo Code</div>
+</div>
+
+<!-- ===== MAIN ===== -->
+<div id="main">
+  <div id="activitybar">
+    <button class="act-btn active" data-panel="explorer" title="Explorer (Ctrl+Shift+E)">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+    </button>
+    <button class="act-btn" data-panel="search" title="Cari (Ctrl+Shift+F)">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    </button>
+    <button class="act-btn" data-panel="git" title="Kontrol Sumber">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.6"/><circle cx="6" cy="18" r="2.6"/><circle cx="18" cy="8" r="2.6"/><path d="M6 8.6v6.8M18 10.6c0 3-3.5 3.2-8 3.6"/></svg>
+      <span class="badge" id="git-badge" style="display:none">0</span>
+    </button>
+    <button class="act-btn" data-panel="ext" title="Ekstensi">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/></svg>
+    </button>
+    <div class="spacer"></div>
+    <button class="act-btn" onclick="openSettings()" title="Pengaturan">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>
+    </button>
+  </div>
+
+  <div id="sidebar">
+    <div class="panel-head">
+      <span class="t" id="sb-title">Explorer</span>
+      <div class="tools">
+        <button class="ph-btn" onclick="newFileModal()" title="Berkas baru"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button class="ph-btn" onclick="renderTree()" title="Segarkan"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/></svg></button>
+        <button class="ph-btn" onclick="collapseAll()" title="Tutup semua"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg></button>
+      </div>
+    </div>
+    <div class="panel-body">
+
+      <div class="panel show" id="p-explorer"><div id="tree"></div></div>
+
+      <div class="panel" id="p-search">
+        <div class="search-row">
+          <input class="search-input" id="search-all" placeholder="Cari di semua berkas…">
+          <input class="search-input" id="search-replace" placeholder="Ganti dengan… (kosongkan = cari saja)">
+          <button class="btn primary" style="width:100%" onclick="doSearch()">Cari</button>
+        </div>
+        <div id="search-results"></div>
+      </div>
+
+      <div class="panel" id="p-git">
+        <div class="git-row">
+          <div class="git-count">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.6"/><circle cx="6" cy="18" r="2.6"/><circle cx="18" cy="8" r="2.6"/><path d="M6 8.6v6.8M18 10.6c0 3-3.5 3.2-8 3.6"/></svg>
+            Cabang: <b style="color:var(--accent)">main</b>
+          </div>
+          <textarea class="git-input" id="git-msg" placeholder="Pesan commit…"></textarea>
+          <button class="git-commit" onclick="doCommit()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg> Commit
+          </button>
+          <div id="git-list" style="margin-top:10px"></div>
+        </div>
+      </div>
+
+      <div class="panel" id="p-ext" style="padding-top:8px"></div>
+
+    </div>
+  </div>
+  <div id="sb-resize"></div>
+
+  <div id="editor-col">
+    <div id="tabsbar">
+      <div id="tabs"></div>
+      <div id="tab-actions">
+        <button class="tb-btn" onclick="runPreview()" title="Jalankan (F5)" style="width:28px;height:28px"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"/></svg></button>
+        <button class="tb-btn" onclick="splitEditor()" title="Bagi editor (split)" style="width:28px;height:28px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v18M3 12h18"/></svg></button>
+      </div>
+    </div>
+    <div id="monaco-wrap">
+      <div id="monaco"></div>
+      <div id="welcome" class="show">
+        <div>
+          <div class="big">Clincoo <b>Code</b></div>
+          <div class="sub">Editor kode full-stack — ringan, rapi, langsung jalan di browser.</div>
+          <div class="grid">
+            <div class="w-card" onclick="newFileModal()"><div class="k">＋ Berkas Baru</div><div class="d">Mulai menulis kode</div></div>
+            <div class="w-card" onclick="openPalette('files')"><div class="k">⌘ Buka Berkas</div><div class="d">Navigasi cepat</div></div>
+            <div class="w-card" onclick="runPreview()"><div class="k">▶ Jalankan</div><div class="d">Pratinjau langsung</div></div>
+            <div class="w-card" onclick="termRun('help')"><div class="k">› Panduan</div><div class="d">Semua fitur editor</div></div>
+          </div>
+          <div class="w-keys">
+            <span><kbd>Ctrl</kbd>+<kbd>P</kbd> buka berkas</span>
+            <span><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> palette perintah</span>
+            <span><kbd>Ctrl</kbd>+<kbd>S</kbd> simpan</span>
+            <span><kbd>Ctrl</kbd>+<kbd>`</kbd> terminal</span>
+            <span><kbd>F5</kbd> pratinjau</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="bt-resize"></div>
+    <div id="bottom">
+      <div id="bt-tabs">
+        <button class="bt-tab active" data-bt="term">TERMINAL</button>
+        <button class="bt-tab" data-bt="prob">MASALAH <span class="cnt" id="prob-cnt" style="display:none">0</span></button>
+        <button class="bt-tab" data-bt="out">OUTPUT</button>
+        <div class="spacer"></div>
+        <button class="ph-btn" onclick="toggleBottom()" title="Tutup panel"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <div id="bt-body">
+        <div class="bt-panel show" id="bt-term">
+          <div id="term">
+            <div id="term-out"></div>
+            <div id="term-in">
+              <span id="term-prompt">clincoo@code:~/project$</span>
+              <input id="term-input" autocomplete="off" spellcheck="false">
+            </div>
+          </div>
+        </div>
+        <div class="bt-panel" id="bt-prob"><div id="problems"><div class="empty-note">Tidak ada masalah terdeteksi. Kode bersih! ✨</div></div></div>
+        <div class="bt-panel" id="bt-out"><div id="output"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== STATUS BAR ===== -->
+<div id="statusbar">
+  <div class="sb" onclick="showPanel('git')" title="Cabang git">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="6" r="2.6"/><circle cx="6" cy="18" r="2.6"/><path d="M6 8.6v6.8"/></svg> main
+  </div>
+  <div class="sb" onclick="toggleBottom()">⚠ <span id="sb-warn">0</span> ✕ <span id="sb-err">0</span></div>
+  <div class="spacer"></div>
+  <div class="sb" id="sb-cursor" onclick="toast('Gunakan Ctrl+G untuk pergi ke baris')">Ln 1, Col 1</div>
+  <div class="sb" id="sb-indent" onclick="cycleIndent()">Spasi: 2</div>
+  <div class="sb" id="sb-enc">UTF-8</div>
+  <div class="sb" id="sb-eol">LF</div>
+  <div class="sb" id="sb-lang" onclick="openSettings()">Plain Text</div>
+  <div class="sb" onclick="openSettings()"> Clincoo Code</div>
+</div>
+
+<!-- overlays -->
+<div id="overlay-center"><div id="palette">
+  <div id="palette-in">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <input id="palette-input" placeholder="Ketik perintah atau nama berkas…">
+  </div>
+  <div id="palette-list"></div>
+</div></div>
+
+<div id="overlay-modal"></div>
+
+<div class="dropdown" id="ctxmenu"></div>
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.min.js"></script>
+<script>
+/* ============================================================
+   Clincoo Code — editor logic
+   ============================================================ */
+'use strict';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+
+const LANGS={js:'javascript',mjs:'javascript',jsx:'javascript',ts:'typescript',tsx:'typescript',html:'html',htm:'html',css:'css',scss:'scss',json:'json',md:'markdown',py:'python',xml:'xml',svg:'xml',yml:'yaml',yaml:'yaml',txt:'plaintext',sh:'shell',sql:'sql',java:'java',c:'cpp',cpp:'cpp',cs:'csharp',go:'go',rs:'rust',php:'php',rb:'ruby',swift:'swift',kt:'kotlin'};
+const langOf=p=>LANGS[(p.split('.').pop()||'').toLowerCase()]||'plaintext';
+const nameOf=p=>p.split('/').pop();
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const FILES={
+'index.html':`<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Halo dari Clincoo Code</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="card">
+    <h1>Halo, Dunia! 👋</h1>
+    <p>Halaman ini dibuat & dijalankan dari <b>Clincoo Code</b>.</p>
+    <button id="btn">Klik aku</button>
+    <p id="count">0 klik</p>
+  </main>
+  <script src="app.js"><\/script>
+</body>
+</html>`,
+'style.css':`:root{
+  --biru:#0a84ff;
+  --gelap:#141416;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--gelap);
+  color:#eee;
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+}
+.card{
+  background:#1e1e22;
+  border:1px solid #2c2c33;
+  border-radius:20px;
+  padding:44px 52px;
+  text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.45);
+}
+h1{font-size:28px;margin-bottom:10px}
+p{color:#9a9aa4;margin-bottom:18px}
+button{
+  background:var(--biru);
+  color:#fff;
+  border:none;
+  border-radius:12px;
+  padding:11px 26px;
+  font-size:15px;
+  font-weight:600;
+  cursor:pointer;
+  transition:.15s;
+}
+button:hover{filter:brightness(1.15);transform:translateY(-1px)}
+`,
+'app.js':`// Klik counter sederhana
+let n = 0;
+
+const btn = document.getElementById('btn');
+const out = document.getElementById('count');
+
+btn.addEventListener('click', () => {
+  n++;
+  out.textContent = n + ' klik';
+  console.log('Terklik', n, 'kali');
+});
+
+console.log('Clincoo Code siap! 🚀');
+`,
+'README.md':`# Proyek Clincoo Code
+
+Editor kode full-stack yang jalan langsung di browser.
+
+## Fitur
+- Syntax highlighting untuk 25+ bahasa
+- File explorer, tab, pencarian global
+- Terminal bawaan
+- Pratinjau langsung (F5)
+- Tema terang & gelap
+- Simpan otomatis ke localStorage
+
+## Mulai
+Tekan **Ctrl+P** untuk membuka berkas, atau **F5** untuk menjalankan pratinjau.
+`,
+'package.json':`{
+  "name": "proyek-clincoo",
+  "version": "1.0.0",
+  "description": "Proyek contoh di Clincoo Code",
+  "scripts": {
+    "dev": "clincoo serve",
+    "build": "clincoo build"
+  },
+  "dependencies": {}
+}`
+};
+
+let project, savedSnap;
+function loadProject(){
+  try{
+    const raw=localStorage.getItem('clincoo_editor_project');
+    if(raw){const p=JSON.parse(raw); if(p&&p['index.html']!==undefined) return p;}
+  }catch(e){}
+  return JSON.parse(JSON.stringify(FILES));
+}
+function persist(){
+  try{localStorage.setItem('clincoo_editor_project',JSON.stringify(project));}catch(e){}
+  updateGit();
+}
+
+let editor=null, models={}, tabs=[], activePath=null, bottomOpen=true, sbOpen=true, zenMode=false;
+
+/* ---------- Monaco ---------- */
+require.config({paths:{vs:'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs'}});
+require(['vs/editor/editor.main'],function(){
+  monaco.editor.setTheme(document.body.classList.contains('light')?'vs':'vs-dark');
+  editor=monaco.editor.create($('#monaco'),{
+    automaticLayout:true,
+    fontSize:parseFloat(localStorage.getItem('cc_font')||13.5),
+    fontFamily:"'Fira Code','JetBrains Mono',Menlo,Consolas,monospace",
+    fontLigatures:true,
+    minimap:{enabled:localStorage.getItem('cc_minimap')!=='off'},
+    tabSize:parseInt(localStorage.getItem('cc_tab')||'2'),
+    wordWrap:localStorage.getItem('cc_wrap')==='on'?'on':'off',
+    smoothScrolling:true,
+    cursorBlinking:'smooth',
+    renderLineHighlight:'all',
+    scrollBeyondLastLine:true,
+    padding:{top:12},
+    scrollbar:{verticalScrollbarSize:10,horizontalScrollbarSize:10},
+  });
+  editor.onDidChangeCursorPosition(e=>{
+    $('#sb-cursor').textContent=`Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+  });
+  monaco.editor.onDidChangeMarkers(()=>{
+    renderProblems();
+  });
+  openDefaultTabs();
+  renderAll();
+  // start
+  termPrint(['Clincoo Code — Terminal v1.0','Ketik "help" untuk daftar perintah.','',''].join('\n'),'dim');
+  termPrint('','ok');
+});
+
+function modelFor(path){
+  if(!models[path]){
+    models[path]=monaco.editor.createModel(project[path]||'',langOf(path),monaco.Uri.parse('inmemory:/'+path));
+    models[path].onDidChangeContent(()=>{renderTabs();updateGit();});
+  }
+  return models[path];
+}
+
+/* ---------- Tabs ---------- */
+function openFile(path,focus=true){
+  if(!(path in project)){toast('Berkas tidak ditemukan: '+path);return;}
+  if(!tabs.includes(path))tabs.push(path);
+  activePath=path;
+  const m=modelFor(path);
+  editor.setModel(m);
+  $('#welcome').classList.remove('show');
+  renderAll();
+  if(focus)editor.focus();
+}
+function openDefaultTabs(){
+  openFile('index.html',false);
+  openFile('app.js',false);
+  openFile('style.css',false);
+}
+function closeTab(path){
+  const i=tabs.indexOf(path); if(i<0)return;
+  tabs.splice(i,1);
+  if(activePath===path){
+    activePath=tabs[Math.min(i,tabs.length-1)]||null;
+    if(activePath)editor.setModel(modelFor(activePath));
+    else{editor.setModel(null);$('#welcome').classList.add('show');}
+  }
+  renderAll();
+}
+function dirtySet(){
+  const d=new Set();
+  tabs.forEach(p=>{const m=models[p]; if(m&&m.getValue()!==project[p])d.add(p);});
+  Object.keys(models).forEach(p=>{const m=models[p]; if(m&&m.getValue()!==project[p])d.add(p);});
+  return d;
+}
+function saveActive(){
+  if(!activePath)return toast('Tidak ada berkas aktif');
+  project[activePath]=models[activePath].getValue();
+  persist();renderTabs();renderTree();
+  toast('Tersimpan: '+nameOf(activePath));
+}
+function saveAll(){
+  Object.keys(models).forEach(p=>project[p]=models[p].getValue());
+  persist();renderTabs();renderTree();
+  toast('Semua berkas tersimpan');
+}
+
+/* ---------- Tree ---------- */
+let collapsed={};
+function treeData(){
+  const root={dirs:{},files:[]};
+  Object.keys(project).forEach(p=>{
+    const parts=p.split('/');
+    let node=root;
+    for(let i=0;i<parts.length-1;i++){
+      const d=parts[i];
+      node.dirs[d]=node.dirs[d]||{dirs:{},files:[]};
+      node=node.dirs[d];
+    }
+    node.files.push(p);
+  });
+  return root;
+}
+function renderTree(){
+  const dirty=dirtySet();
+  const build=(node,depth,el,parentPath)=>{
+    Object.keys(node.dirs).sort().forEach(d=>{
+      const path=parentPath?parentPath+'/'+d:d;
+      const isCollapsed=collapsed[path];
+      const item=document.createElement('div');
+      item.className='tree-item';
+      item.innerHTML=`<span class="tw ${isCollapsed?'':'open'}"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></span>
+      <svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="${isCollapsed?'none':'currentColor'}" stroke="currentColor" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      <span class="nm">${esc(d)}</span>`;
+      item.onclick=e=>{e.stopPropagation();collapsed[path]=!collapsed[path];renderTree();};
+      item.oncontextmenu=e=>ctxMenu(e,path,true);
+      el.appendChild(item);
+      if(!isCollapsed){
+        const kids=document.createElement('div');
+        kids.className='tree-kids';
+        build(node.dirs[d],depth+1,kids,path);
+        el.appendChild(kids);
+      }
+    });
+    node.files.sort((a,b)=>nameOf(a).localeCompare(nameOf(b))).forEach(p=>{
+      const item=document.createElement('div');
+      item.className='tree-item'+(p===activePath?' active':'');
+      item.innerHTML=`<span class="tw"></span>
+      <svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+      <span class="nm">${esc(nameOf(p))}</span>${dirty.has(p)?'<span class="badge M">M</span>':''}`;
+      item.onclick=()=>openFile(p);
+      item.oncontextmenu=e=>ctxMenu(e,p,false);
+      el.appendChild(item);
+    });
+  };
+  const t=$('#tree');t.innerHTML='';
+  const rootWrap=document.createElement('div');
+  rootWrap.className='tree-item';
+  rootWrap.style.fontWeight='700';
+  rootWrap.innerHTML=`<span class="tw open"></span><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="nm">proyek-clincoo</span>`;
+  t.appendChild(rootWrap);
+  build(treeData(),0,t,'');
+  if(!Object.keys(project).length)t.innerHTML='<div class="empty-note">Proyek kosong.<br>Buat berkas baru dengan tombol ＋</div>';
+}
+function collapseAll(){collapsed={};renderTree();}
+
+/* ---------- Tabs render ---------- */
+function renderTabs(){
+  const wrap=$('#tabs');wrap.innerHTML='';
+  tabs.forEach(p=>{
+    const d=document.createElement('div');
+    d.className='tab'+(p===activePath?' active':'')+(models[p]&&models[p].getValue()!==project[p]?' dirty':'');
+    d.innerHTML=`<span class="nm">${esc(nameOf(p))}</span><span class="dirty"></span><span class="x"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>`;
+    d.onclick=e=>{if(e.target.closest('.x'))closeTab(p);else openFile(p);};
+    wrap.appendChild(d);
+  });
+  $('#sb-lang').textContent=activePath?({javascript:'JavaScript',typescript:'TypeScript',html:'HTML',css:'CSS',json:'JSON',markdown:'Markdown',python:'Python',plaintext:'Plain Text'}[langOf(activePath)]||langOf(activePath)):'—';
+}
+
+/* ---------- Panels ---------- */
+function showPanel(name){
+  sbOpen=true;$('#sidebar').classList.remove('hidden');
+  $$('.panel').forEach(p=>p.classList.remove('show'));
+  $('#p-'+name).classList.add('show');
+  $$('.act-btn').forEach(b=>b.classList.toggle('active',b.dataset.panel===name));
+  $('#sb-title').textContent={explorer:'Explorer',search:'Pencarian',git:'Kontrol Sumber',ext:'Ekstensi'}[name]||name;
+}
+$$('.act-btn').forEach(b=>b.onclick=()=>{
+  if(b.classList.contains('active')&&sbOpen){$('#sidebar').classList.add('hidden');sbOpen=false;}
+  else showPanel(b.dataset.panel);
+});
+function toggleSidebar(){
+  sbOpen=!sbOpen;
+  $('#sidebar').classList.toggle('hidden',!sbOpen);
+  if(sbOpen&&$$('.panel.show').length===0)showPanel('explorer');
+}
+function toggleBottom(){
+  bottomOpen=!bottomOpen;
+  $('#bottom').classList.toggle('hidden',!bottomOpen);
+}
+function toggleZen(){
+  zenMode=!zenMode;
+  $('#sidebar').classList.toggle('hidden',zenMode||!sbOpen);
+  $('#bottom').classList.toggle('hidden',zenMode||!bottomOpen);
+  $('#titlebar').style.display=zenMode?'none':'flex';
+  $('#statusbar').style.display=zenMode?'none':'flex';
+  toast(zenMode?'Mode Zen — tekan Ctrl+B / menu Tampilan untuk keluar':'Mode Zen nonaktif');
+}
+$$('.bt-tab').forEach(b=>b.onclick=()=>{
+  $$('.bt-tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  $$('.bt-panel').forEach(x=>x.classList.remove('show'));
+  $('#bt-'+b.dataset.bt).classList.add('show');
+  if(b.dataset.bt==='term')$('#term-input').focus();
+});
+
+/* ---------- Search ---------- */
+function doSearch(){
+  const q=$('#search-all').value.trim();
+  const rep=$('#search-replace').value;
+  const res=$('#search-results');res.innerHTML='';
+  if(!q){res.innerHTML='<div class="empty-note">Ketik kata kunci dulu.</div>';return;}
+  let total=0;
+  Object.keys(project).forEach(p=>{
+    const lines=(project[p]).split('\n');
+    lines.forEach((ln,i)=>{
+      if(ln.toLowerCase().includes(q.toLowerCase())){
+        total++;
+        const row=document.createElement('div');
+        row.className='sr-line';
+        row.innerHTML=`<span class="ln">${i+1}</span><span>${esc(nameOf(p))} — ${esc(ln.trim()).slice(0,90)}</span>`;
+        row.onclick=()=>{openFile(p);editor.revealLineInCenter(i+1);editor.setPosition({lineNumber:i+1,column:1});};
+        res.appendChild(row);
+      }
+    });
+  });
+  if(!total)res.innerHTML='<div class="empty-note">Tidak ada hasil untuk "'+esc(q)+'".</div>';
+  else if(rep!==''&&activePath){
+    const m=models[activePath];
+    if(m){const nv=m.getValue().split(q).join(rep);m.setValue(nv);toast('Diganti di berkas aktif.');}
+  }
+}
+
+/* ---------- Git ---------- */
+function updateGit(){
+  const dirty=dirtySet();
+  const badge=$('#git-badge');
+  badge.style.display=dirty.size?'grid':'none';
+  badge.textContent=dirty.size;
+  renderGitList();
+}
+function renderGitList(){
+  const dirty=dirtySet();
+  const el=$('#git-list');
+  if(!dirty.size){el.innerHTML='<div class="empty-note">Tidak ada perubahan.<br>Semua berkas tersimpan. ✨</div>';return;}
+  el.innerHTML=[...dirty].map(p=>`<div class="tree-item" onclick="openFile('${esc(p)}')"><span class="badge M">M</span><span class="nm">${esc(nameOf(p))}</span></div>`).join('');
+}
+function doCommit(){
+  const dirty=dirtySet();
+  const msg=$('#git-msg').value.trim()||'Update berkas';
+  if(!dirty.size){toast('Tidak ada yang di-commit');return;}
+  saveAll();
+  $('#git-msg').value='';
+  termPrint(['','[main '+Math.random().toString(16).slice(2,9)+'] '+msg,' '+[...dirty].map(p=>' 1 file changed — '+nameOf(p)).join('\n'),''].join('\n'),'ok');
+  toast('Commit berhasil: '+dirty.size+' berkas');
+}
+
+/* ---------- Extensions ---------- */
+const EXTS=[
+  ['Pr','Prettier','Formatter kode otomatis untuk semua bahasa','#e5b454'],
+  ['ES','ESLint','Deteksi error & style pada JavaScript','#4b32c3'],
+  ['LS','Live Preview','Reload otomatis saat menyimpan berkas','#0a84ff'],
+  ['TK','Theme Kit','Paket tema ikon & warna tambahan','#2fbf71'],
+  ['GM','GitLens','Sejarah & blame per baris kode','#e55454'],
+];
+$('#p-ext').innerHTML=EXTS.map(e=>`<div class="ext-card"><div class="ext-ic" style="background:${e[3]}">${e[0]}</div><div><div class="ext-nm">${e[1]}</div><div class="ext-ds">${e[2]}</div><span class="ext-chip">✓ Terpasang</span></div></div>`).join('');
+
+/* ---------- Terminal ---------- */
+function termPrint(text,cls){
+  const out=$('#term-out');
+  const d=document.createElement('div');
+  if(cls)d.className=cls;
+  d.textContent=text;
+  out.appendChild(d);
+  out.scrollTop=out.scrollHeight;
+}
+const CMDS={
+  help(){return ['Perintah tersedia:','  help          — panduan ini','  ls            — daftar berkas','  cat <berkas>  — tampilkan isi berkas','  open <berkas> — buka di editor','  touch <nama>  — buat berkas baru','  rm <berkas>    — hapus berkas','  clear         — bersihkan terminal','  date          — tanggal & waktu','  whoami        — siapa kamu','  git status    — status perubahan','  git log       — riwayat commit (fun)','  npm run dev   — jalankan dev server (fun)','  neofetch      — info sistem'].join('\n');},
+  ls(){return Object.keys(project).sort().map(p=>(p.includes('/')?'  ':'')+nameOf(p)+'  ('+((project[p].length/1024).toFixed(1))+' KB)').join('\n');},
+  cat(a){const f=a[0];if(!f)return 'Penggunaan: cat <berkas>';if(project[f]===undefined)return 'cat: '+f+': tidak ada';return project[f].slice(0,3000);},
+  open(a){const f=a[0];if(project[f]!==undefined){openFile(f);return 'Membuka '+f+'…';}return 'open: '+f+': tidak ada';},
+  touch(a){const f=a.join(' ');if(!f)return 'Penggunaan: touch <nama.ekstensi>';project[f]='';persist();renderTree();return 'Dibuat: '+f;},
+  rm(a){const f=a[0];if(project[f]===undefined)return 'rm: '+f+': tidak ada';if(models[f])models[f].dispose(),delete models[f];delete project[f];if(tabs.includes(f))closeTab(f);persist();renderTree();return 'Terhapus: '+f;},
+  clear(){$('#term-out').innerHTML='';return '';},
+  date(){return new Date().toString();},
+  whoami(){return 'clincoo — developer keren 💙';},
+  git(a){const s=a[1];
+    if(s==='status'){const d=dirtySet();return d.size?'Perubahan belum di-commit:\n'+[...d].map(p=>'  modified: '+p).join('\n')+'\n\nGunakan panel Kontrol Sumber untuk commit.':'di cabang main\ntidak ada perubahan, pohon kerja bersih ✨';}
+    if(s==='log')return '[main 9f2a1bc] init: Clincoo Code v1.0\n[main 4d0c889] feat: editor dasar\n[main b3e77aa] chore: setup proyek';
+    return 'git: perintah tidak dikenali. Coba: git status / git log';},
+  npm(a){if((a[0]==='run')&&(a[1]==='dev')){setTimeout(()=>termPrint('  ➜ Local: http://localhost:3000 — siap dalam 0.2s ✨','ok'),300);return '> proyek-clincoo@1.0.0 dev\n> clincoo serve';}return 'npm: coba "npm run dev"';},
+  neofetch(){return ['      ┌─┐        clincoo@code','      │ │        ─────────────','   ┌──┘ │  OS    : Clincoo Code 1.0','   │  ● │  Shell  : csh 1.0','   └──┐ │  Editor: Monaco Engine','      │ │  Tema  : '+(document.body.classList.contains('light')?'Terang':'Gelap'),'      └─┘  Bahasa: JS/TS/HTML/CSS + 21 lainnya'].join('\n');}
+};
+function termRun(raw){
+  toggleBottomIfClosed();
+  const line=raw.trim();
+  if(!line)return;
+  termPrint('clincoo@code:~/project$ '+line,'cmd');
+  const [c,...args]=line.split(/\s+/);
+  let out='';
+  if(CMDS[c])out=CMDS[c](args);
+  else out='csh: perintah tidak ditemukan: '+c+'\nKetik "help" untuk daftar perintah.';
+  if(out)termPrint(out);
+}
+function toggleBottomIfClosed(){if(!bottomOpen){bottomOpen=true;$('#bottom').classList.remove('hidden');}}
+$('#term-input')?null:null;
+document.addEventListener('DOMContentLoaded',()=>{
+  $('#term-input').addEventListener('keydown',e=>{
+    if(e.key==='Enter'){const v=e.target.value;e.target.value='';termRun(v);}
+  });
+});
+
+/* ---------- Problems & Output ---------- */
+function renderProblems(){
+  const all=monaco.editor.getAllModels().flatMap(m=>monaco.editor.getModelMarkers({resource:m.uri}).map(mk=>({msg:mk.message,sev:mk.severity,file:m.uri.path.split('/').pop(),line:mk.startLineNumber,resource:m})));
+  const errs=all.filter(p=>p.sev===8), warns=all.filter(p=>p.sev!==8);
+  $('#sb-err').textContent=errs.length;$('#sb-warn').textContent=warns.length;
+  const cnt=$('#prob-cnt');
+  cnt.style.display=all.length?'grid':'none';cnt.textContent=all.length;
+  const el=$('#problems');
+  if(!all.length){el.innerHTML='<div class="empty-note">Tidak ada masalah terdeteksi. Kode bersih! ✨</div>';return;}
+  el.innerHTML=all.map(p=>`<div class="prob-row" data-res="${p.resource.uri.toString()}" data-ln="${p.line}">
+    <span style="color:${p.sev===8?'var(--err)':'var(--warn)'}">${p.sev===8?'✕':'⚠'}</span>
+    <span class="msg">${esc(p.msg)}</span><span class="file">${esc(p.file)}:${p.line}</span></div>`).join('');
+  $$('.prob-row').forEach(r=>r.onclick=()=>{
+    monaco.editor.setModel(models[Object.keys(models).find(k=>models[k].uri.toString()===r.dataset.res)]||null);
+    const p=Object.keys(models).find(k=>models[k].uri.toString()===r.dataset.res);
+    if(p)openFile(p);
+    editor.revealLineInCenter(+r.dataset.ln);editor.setPosition({lineNumber:+r.dataset.ln,column:1});
+  });
+  termMarkerToOutput(all.length);
+}
+function termMarkerToOutput(){}
+function outPrint(msg){
+  const el=$('#output');
+  const d=document.createElement('div');d.className='out-line';d.innerHTML=msg;
+  el.appendChild(d);el.scrollTop=el.scrollHeight;
+}
+
+/* ---------- Preview ---------- */
+function buildPreview(){
+  let html=project['index.html'];
+  if(html===undefined){
+    const firstHtml=Object.keys(project).find(p=>p.endsWith('.html'));
+    if(!firstHtml)return null;
+    html=project[firstHtml];
+  }
+  html=html.replace(/<link[^>]*href=["']([^"']+\.css)["'][^>]*>/gi,(m,href)=>{
+    const f=project[href]!==undefined?href:Object.keys(project).find(p=>nameOf(p)===href);
+    return f&&project[f]!==undefined?'<style>'+project[f]+'</style>':m;
+  });
+  html=html.replace(/<script[^>]*src=["']([^"']+\.(?:js|mjs))["'][^>]*><\/script>/gi,(m,src)=>{
+    const f=project[src]!==undefined?src:Object.keys(project).find(p=>nameOf(p)===src);
+    return f&&project[f]!==undefined?'<script>'+project[f].replace(/<\/script>/gi,'<\\/script>')+'<\/script>':m;
+  });
+  return html;
+}
+function runPreview(){
+  const html=buildPreview();
+  if(html===null){toast('Tidak ada berkas HTML untuk pratinjau');return;}
+  openModal(`<div class="frame-wrap">
+    <div id="preview-head">
+      <span style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--ok)"><path d="M6 4l14 8-14 8z"/></svg> Pratinjau</span>
+      <div class="url">clincoo.local/proyek/index.html</div>
+      <button class="btn ghost" onclick="document.getElementById('overlay-modal').classList.remove('show');document.getElementById('overlay-modal').innerHTML=''">Tutup ✕</button>
+    </div>
+    <iframe id="preview-frame"></iframe>
+  </div>`);
+  $('#preview-frame').srcdoc=html;
+  outPrint('▶ Pratinjau dijalankan — <b>'+new Date().toLocaleTimeString('id-ID')+'</b>');
+}
+
+/* ---------- Palette ---------- */
+const COMMANDS=[
+  {t:'Simpan berkas',s:'Ctrl+S',fn:()=>saveActive()},
+  {t:'Simpan semua berkas',s:'',fn:()=>saveAll()},
+  {t:'Berkas baru',s:'Ctrl+N',fn:()=>newFileModal()},
+  {t:'Format dokumen',s:'Shift+Alt+F',fn:()=>edAction('editor.action.formatDocument')},
+  {t:'Cari di semua berkas',s:'Ctrl+Shift+F',fn:()=>{showPanel('search');$('#search-all').focus();}},
+  {t:'Jalankan pratinjau',s:'F5',fn:()=>runPreview()},
+  {t:'Buka terminal',s:'Ctrl+`',fn:()=>{if(!bottomOpen)toggleBottom();$$('.bt-tab')[0].click();$('#term-input').focus();}},
+  {t:'Ganti tema terang/gelap',s:'',fn:()=>toggleTheme()},
+  {t:'Mode Zen',s:'',fn:()=>toggleZen()},
+  {t:'Pengaturan editor',s:'',fn:()=>openSettings()},
+  {t:'Bagi editor (split)',s:'',fn:()=>splitEditor()},
+  {t:'Tutup tab aktif',s:'Ctrl+W',fn:()=>closeTab(activePath)},
+  {t:'Reset proyek ke contoh awal',s:'',fn:()=>resetProject()},
+];
+let palMode='cmd',palSel=0,palItems=[];
+function openPalette(mode='cmd'){
+  palMode=mode;palSel=0;
+  $('#overlay-center').classList.add('show');
+  const inp=$('#palette-input');
+  inp.value='';inp.placeholder=mode==='files'?'Nama berkas…':'Ketik perintah…';
+  inp.focus();renderPalette('');
+}
+function renderPalette(q){
+  q=q.toLowerCase();
+  const list=$('#palette-list');
+  if(palMode==='files'){
+    palItems=Object.keys(project).filter(p=>p.toLowerCase().includes(q)).map(p=>({t:nameOf(p),s:p,fn:()=>openFile(p)}));
+  }else{
+    palItems=COMMANDS.filter(c=>c.t.toLowerCase().includes(q));
+  }
+  if(!palItems.length){list.innerHTML='<div class="empty-note">Tidak ada hasil.</div>';return;}
+  palSel=Math.min(palSel,palItems.length-1);
+  list.innerHTML=palItems.map((c,i)=>`<div class="pal-item ${i===palSel?'sel':''}" data-i="${i}">
+    <span style="width:15px;display:grid;place-items:center;color:var(--text3)">${palMode==='files'?'⌘':'›'}</span>
+    <span>${esc(c.t)}</span><span class="sub">${esc(c.s||'')}</span></div>`).join('');
+  $$('.pal-item').forEach(el=>{
+    el.onclick=()=>{const c=palItems[+el.dataset.i];closePalette();c.fn();};
+    el.onmouseenter=()=>{palSel=+el.dataset.i;$$('.pal-item').forEach(x=>x.classList.remove('sel'));el.classList.add('sel');};
+  });
+  list._scrollSel=()=>{const el=list.querySelector('.pal-item.sel');if(el)el.scrollIntoView({block:'nearest'});};
+  list._scrollSel();
+}
+function closePalette(){$('#overlay-center').classList.remove('show');}
+$('#palette-input').addEventListener('input',e=>{palSel=0;renderPalette(e.target.value);});
+$('#palette-input').addEventListener('keydown',e=>{
+  if(e.key==='ArrowDown'){palSel=Math.min(palSel+1,palItems.length-1);renderPalette(e.target.value);}
+  else if(e.key==='ArrowUp'){palSel=Math.max(palSel-1,0);renderPalette(e.target.value);}
+  else if(e.key==='Enter'){const c=palItems[palSel];if(c){closePalette();c.fn();}}
+  else if(e.key==='Escape')closePalette();
+  e.stopPropagation();
+});
+$('#overlay-center').addEventListener('mousedown',e=>{if(e.target.id==='overlay-center')closePalette();});
+
+/* ---------- Modals ---------- */
+function openModal(html){$('#overlay-modal').innerHTML=html;$('#overlay-modal').classList.add('show');}
+function closeModal(){$('#overlay-modal').classList.remove('show');$('#overlay-modal').innerHTML='';}
+$('#overlay-modal').addEventListener('mousedown',e=>{if(e.target.id==='overlay-modal')closeModal();});
+
+function newFileModal(){
+  openModal(`<div class="modal">
+    <h3>＋ Berkas Baru</h3>
+    <label>Nama berkas (boleh dengan folder, mis. src/app.js)</label>
+    <input type="text" id="nf-name" placeholder="contoh: utils.js">
+    <div class="hint">Didukung: JS, TS, HTML, CSS, JSON, MD, PY, dan 20+ bahasa lainnya.</div>
+    <div class="row"><button class="btn ghost" onclick="closeModal()">Batal</button><button class="btn primary" onclick="createFile()">Buat</button></div>
+  </div>`);
+  const inp=$('#nf-name');inp.focus();
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')createFile();if(e.key==='Escape')closeModal();e.stopPropagation();});
+}
+function createFile(){
+  const name=$('#nf-name').value.trim();
+  if(!name){toast('Nama tidak boleh kosong');return;}
+  if(project[name]!==undefined){toast('Berkas sudah ada');return;}
+  project[name]=name.endsWith('.html')?'<!DOCTYPE html>\n<html>\n<head>\n  <meta charset="UTF-8">\n  <title>Berkas Baru</title>\n</head>\n<body>\n  \n</body>\n</html>':'';
+  persist();renderTree();openFile(name);closeModal();
+  toast('Berkas dibuat: '+name);
+}
+function resetProject(){
+  openModal(`<div class="modal">
+    <h3>Reset Proyek</h3>
+    <p style="color:var(--text2);font-size:12.5px;line-height:1.6">Semua berkas akan dikembalikan ke contoh awal. Perubahan yang belum tersimpan akan hilang.</p>
+    <div class="row"><button class="btn ghost" onclick="closeModal()">Batal</button><button class="btn danger" onclick="doReset()">Reset sekarang</button></div>
+  </div>`);
+}
+function doReset(){
+  localStorage.removeItem('clincoo_editor_project');
+  project=JSON.parse(JSON.stringify(FILES));
+  Object.values(models).forEach(m=>m.dispose());models={};
+  tabs=[];activePath=null;
+  editor.setModel(null);$('#welcome').classList.add('show');
+  renderAll();closeModal();toast('Proyek direset ke contoh awal');
+}
+
+/* ---------- Settings ---------- */
+function openSettings(){
+  openModal(`<div class="modal">
+    <h3>⚙ Pengaturan Editor</h3>
+    <label>Ukuran font: <b id="fs-val">${(localStorage.getItem('cc_font')||13.5)}</b></label>
+    <input type="range" min="11" max="22" step="0.5" value="${localStorage.getItem('cc_font')||13.5}" style="width:100%" oninput="setFontSize(this.value)">
+    <label>Indentasi (spasi)</label>
+    <select onchange="setIndent(this.value)">
+      <option value="2" ${localStorage.getItem('cc_tab')==='2'?'selected':''}>2 spasi</option>
+      <option value="4" ${localStorage.getItem('cc_tab')==='4'?'selected':''}>4 spasi</option>
+      <option value="8" ${localStorage.getItem('cc_tab')==='8'?'selected':''}>8 spasi</option>
+    </select>
+    <label>Minimap</label>
+    <div class="row" style="margin-top:6px"><span style="font-size:12.5px;color:var(--text2)">Tampilkan peta mini di sisi kanan</span>
+      <label class="switch"><input type="checkbox" ${localStorage.getItem('cc_minimap')!=='off'?'checked':''} onchange="setMinimap(this.checked)"><span class="sl"></span></label></div>
+    <label>Word wrap</label>
+    <div class="row" style="margin-top:6px"><span style="font-size:12.5px;color:var(--text2)">Potong baris panjang ke baris baru</span>
+      <label class="switch"><input type="checkbox" ${localStorage.getItem('cc_wrap')==='on'?'checked':''} onchange="setWrap(this.checked)"><span class="sl"></span></label></div>
+    <div class="row"><button class="btn ghost" onclick="closeModal()">Tutup</button><button class="btn danger" onclick="closeModal();resetProject()">Reset proyek…</button></div>
+  </div>`);
+}
+function setFontSize(v){localStorage.setItem('cc_font',v);$('#fs-val').textContent=v;if(editor)editor.updateOptions({fontSize:parseFloat(v)});}
+function setIndent(v){localStorage.setItem('cc_tab',v);if(editor)editor.updateOptions({tabSize:parseInt(v)});$('#sb-indent').textContent='Spasi: '+v;}
+function setMinimap(on){localStorage.setItem('cc_minimap',on?'on':'off');if(editor)editor.updateOptions({minimap:{enabled:on}});}
+function setWrap(on){localStorage.setItem('cc_wrap',on?'on':'off');if(editor)editor.updateOptions({wordWrap:on?'on':'off'});}
+function cycleIndent(){const next=({'2':'4','4':'8','8':'2'})[localStorage.getItem('cc_tab')||'2'];setIndent(next);toast('Indentasi: '+next+' spasi');}
+
+/* ---------- Context menu ---------- */
+function ctxMenu(e,path,isDir){
+  e.preventDefault();e.stopPropagation();
+  const m=$('#ctxmenu');
+  const items=isDir?[
+    ['Berkas baru di sini',()=>{newFileModal();}],
+  ]:[
+    ['Buka',()=>openFile(path)],
+    ['Ganti nama',()=>renameModal(path)],
+    ['Duplikat',()=>{const nn=path.replace(/(\.[^.]+)$/,' copy$1');if(project[nn]!==undefined){toast('Sudah ada: '+nn);return;}project[nn]=project[path];persist();renderTree();toast('Diduplikat');}],
+    ['—',null],
+    ['Hapus',()=>{delete project[path];if(models[path]){models[path].dispose();delete models[path];}if(tabs.includes(path))closeTab(path);persist();renderTree();toast('Terhapus: '+nameOf(path));}],
+  ];
+  m.innerHTML=items.map((it,i)=>it[0]==='—'?'<div class="dd-sep"></div>':`<div class="dd-item" data-i="${i}">${esc(it[0])}</div>`).join('');
+  $$('#ctxmenu .dd-item').forEach(el=>el.onclick=()=>{m.classList.remove('show');items[+el.dataset.i][1]();});
+  m.classList.add('show');
+  const r=m.getBoundingClientRect();
+  m.style.left=Math.min(e.clientX,innerWidth-r.width-8)+'px';
+  m.style.top=Math.min(e.clientY,innerHeight-r.height-8)+'px';
+}
+function renameModal(oldPath){
+  openModal(`<div class="modal">
+    <h3>Ganti nama berkas</h3>
+    <label>Nama baru</label>
+    <input type="text" id="rn-name" value="${esc(oldPath)}">
+    <div class="row"><button class="btn ghost" onclick="closeModal()">Batal</button><button class="btn primary" onclick="doRename('${esc(oldPath)}')">Simpan</button></div>
+  </div>`);
+  const inp=$('#rn-name');inp.focus();inp.select();
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')doRename(oldPath);if(e.key==='Escape')closeModal();e.stopPropagation();});
+}
+function doRename(oldPath){
+  const nn=$('#rn-name').value.trim();
+  if(!nn||nn===oldPath){closeModal();return;}
+  if(project[nn]!==undefined){toast('Nama sudah dipakai');return;}
+  project[nn]=project[oldPath];delete project[oldPath];
+  if(models[oldPath]){models[oldPath].dispose();delete models[oldPath];}
+  const ti=tabs.indexOf(oldPath);
+  if(ti>=0)tabs[ti]=nn;
+  if(activePath===oldPath)activePath=nn;
+  persist();renderAll();closeModal();
+  if(tabs.includes(nn))openFile(nn);
+  toast('Diganti nama: '+nameOf(nn));
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#ctxmenu'))$('#ctxmenu').classList.remove('show');
+  if(!e.target.closest('.dropdown')&&!e.target.closest('.menu-btn'))$$('.dropdown.show').forEach(d=>{if(!d.id.startsWith('m-'))d.classList.remove('show');});
+  if(!e.target.closest('.menu-btn'))$$('[id^="m-"].show').forEach(d=>d.classList.remove('show'));
+});
+$$('.menu-btn').forEach(b=>b.onclick=e=>{
+  e.stopPropagation();
+  const dd=$('#'+b.dataset.menu);
+  $$('.dropdown.show').forEach(d=>d.classList.remove('show'));
+  dd.classList.add('show');
+  const r=b.getBoundingClientRect();
+  dd.style.left=r.left+'px';dd.style.top=(r.bottom+4)+'px';
+});
+
+/* ---------- Misc ---------- */
+function edAction(id){if(!editor)return;editor.getAction(id)?.run?.();}
+function splitEditor(){
+  if(!editor)return;
+  const l=monaco.editor.create($('#monaco'),{automaticLayout:true,theme:document.body.classList.contains('light')?'vs':'vs-dark'});
+  const m=editor.getModel();
+  l.setModel(m);
+  toast('Split editor aktif — kedua panel menampilkan berkas yang sama');
+  setTimeout(()=>{l.dispose();toast('Panel split ditutup');},8000);
+}
+function toggleTheme(){
+  document.body.classList.toggle('light');
+  const light=document.body.classList.contains('light');
+  monaco.editor.setTheme(light?'vs':'vs-dark');
+  localStorage.setItem('cc_theme',light?'light':'dark');
+  toast('Tema: '+(light?'Terang ☀':'Gelap 🌙'));
+}
+function showWelcome(){
+  tabs=[];activePath=null;
+  if(editor)editor.setModel(null);
+  renderAll();
+  $('#welcome').classList.add('show');
+}
+function toast(msg){
+  const t=$('#toast');
+  const d=document.createElement('div');d.className='toast-item';
+  d.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>${esc(msg)}`;
+  t.appendChild(d);
+  setTimeout(()=>d.remove(),2600);
+}
+function renderAll(){renderTree();renderTabs();updateGit();}
+
+/* ---------- Resize handles ---------- */
+(function(){
+  let dragging=null,startPos=0,startSize=0;
+  const sr=$('#sb-resize'),br=$('#bt-resize');
+  function down(which,el,e){dragging=which;startPos=which==='sb'?e.clientX:e.clientY;startSize=which==='sb'?$('#sidebar').getBoundingClientRect().width:$('#bottom').getBoundingClientRect().height;document.body.style.userSelect='none';e.preventDefault();}
+  sr.addEventListener('mousedown',e=>down('sb',sr,e));
+  br.addEventListener('mousedown',e=>down('bt',br,e));
+  window.addEventListener('mousemove',e=>{
+    if(!dragging)return;
+    if(dragging==='sb')$('#sidebar').style.width=Math.max(180,Math.min(460,startSize+e.clientX-startPos))+'px';
+    else $('#bottom').style.height=Math.max(100,Math.min(innerHeight*.7,startSize-(e.clientY-startPos)))+'px';
+  });
+  window.addEventListener('mouseup',()=>{dragging=null;document.body.style.userSelect='';});
+})();
+
+/* ---------- Keyboard ---------- */
+window.addEventListener('keydown',e=>{
+  const mod=e.ctrlKey||e.metaKey;
+  if(mod&&e.key.toLowerCase()==='s'){e.preventDefault();saveActive();}
+  else if(mod&&e.key.toLowerCase()==='p'){e.preventDefault();openPalette(e.shiftKey?'cmd':'files');}
+  else if(mod&&e.key.toLowerCase()==='b'){e.preventDefault();toggleSidebar();}
+  else if(mod&&e.key==='`'){e.preventDefault();toggleBottom();if(bottomOpen)$('#term-input').focus();}
+  else if(mod&&e.key.toLowerCase()==='w'){e.preventDefault();if(activePath)closeTab(activePath);}
+  else if(mod&&e.shiftKey&&e.key.toLowerCase()==='e'){e.preventDefault();showPanel('explorer');}
+  else if(mod&&e.shiftKey&&e.key.toLowerCase()==='f'){e.preventDefault();showPanel('search');$('#search-all').focus();}
+  else if(e.key==='F5'){e.preventDefault();runPreview();}
+  else if(e.key==='Escape'){closePalette();closeModal();}
+});
+$('#search-all').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
+
+/* ---------- Init ---------- */
+project=loadProject();
+if(localStorage.getItem('cc_theme')==='light')document.body.classList.add('light');
+$('#sb-indent').textContent='Spasi: '+(localStorage.getItem('cc_tab')||'2');
+outPrint('<b>Clincoo Code</b> siap digunakan.');
+outPrint('Monaco engine dimuat. Semua perubahan tersimpan otomatis di browser.');
+</script>
+</body>
+</html>
