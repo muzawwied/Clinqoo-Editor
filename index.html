@@ -8,15 +8,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a84ff'/%3E%3Cpath d='M12 10l-5 6 5 6M20 10l5 6-5 6' stroke='white' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
 <style>
 :root{
-  --accent:#0a84ff; --accent-soft:rgba(10,132,255,.16);
+  --accent:#f5a623; --accent-soft:rgba(245,166,35,.15);
   --bg:#141416; --bg2:#1a1a1d; --bg3:#202024; --bg4:#26262b;
   --line:#2c2c33; --line2:#3a3a42;
   --text:#d6d6dc; --text2:#9a9aa4; --text3:#6c6c76;
   --tab-bg:#1d1d21; --editor-bg:#1a1a1d;
-  --status:#0a84ff;
+  --status:#131316;
   --ok:#2fbf71; --warn:#e5b454; --err:#e55454;
   --shadow:0 12px 40px rgba(0,0,0,.5);
   --radius:10px;
@@ -40,9 +41,9 @@ svg{flex-shrink:0}
 ::-webkit-scrollbar-corner{background:transparent}
 
 /* ===== Title bar ===== */
-#titlebar{height:44px;background:var(--bg2);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 10px;gap:14px;flex-shrink:0;user-select:none}
-#logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13.5px;letter-spacing:-.01em}
-#logo .logo-ic{width:24px;height:24px;border-radius:7px;background:var(--accent);display:grid;place-items:center;color:#fff}
+#titlebar{height:48px;background:var(--bg2);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 10px;gap:14px;flex-shrink:0;user-select:none}
+#logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:14px;letter-spacing:-.01em}
+#logo .logo-img{width:24px;height:24px;border-radius:7px;background:#fff;display:block}
 #logo b{color:var(--text)}#logo span{color:var(--accent)}
 #menubar{display:flex;gap:2px}
 .menu-btn{padding:5px 9px;border-radius:6px;color:var(--text2);font-size:12.5px;font-weight:500}
@@ -68,15 +69,15 @@ svg{flex-shrink:0}
 
 /* ===== Main layout ===== */
 #main{flex:1;display:flex;min-height:0}
-#activitybar{width:48px;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:4px;flex-shrink:0}
-.act-btn{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:var(--text3);position:relative;transition:.15s}
+#activitybar{width:52px;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:4px;flex-shrink:0}
+.act-btn{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;color:var(--text3);position:relative;transition:.15s}
 .act-btn:hover{color:var(--text)}
 .act-btn.active{color:var(--accent)}
 .act-btn.active::before{content:'';position:absolute;left:-8px;width:3px;height:24px;background:var(--accent);border-radius:0 3px 3px 0}
 .act-btn .badge{position:absolute;top:4px;right:4px;min-width:15px;height:15px;padding:0 4px;border-radius:8px;background:var(--accent);color:#fff;font-size:9.5px;font-weight:700;display:grid;place-items:center}
 #activitybar .spacer{flex:1}
 
-#sidebar{width:252px;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;flex-shrink:0;min-width:0;transition:width .15s}
+#sidebar{width:270px;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;flex-shrink:0;min-width:0;transition:width .15s}
 #sidebar.hidden{display:none}
 #sb-resize{width:4px;cursor:col-resize;flex-shrink:0;background:transparent;transition:.15s}
 #sb-resize:hover{background:var(--accent)}
@@ -128,12 +129,22 @@ svg{flex-shrink:0}
 .ext-ds{font-size:11.5px;color:var(--text2);line-height:1.45;margin-top:2px}
 .ext-chip{font-size:10px;font-weight:700;color:var(--ok);background:rgba(47,191,113,.13);padding:2px 8px;border-radius:6px;margin-top:5px;display:inline-block}
 
+/* ===== Breadcrumbs ===== */
+#breadcrumbs{height:28px;display:flex;align-items:center;gap:5px;padding:0 16px;font-size:12px;color:var(--text2);background:var(--editor-bg);border-bottom:1px solid var(--line);overflow-x:auto;white-space:nowrap;scrollbar-width:none;flex-shrink:0}
+#breadcrumbs::-webkit-scrollbar{display:none}
+#breadcrumbs .crumb{display:flex;align-items:center;gap:5px;cursor:pointer;padding:2px 5px;border-radius:5px}
+#breadcrumbs .crumb:hover{color:var(--text);background:var(--bg4)}
+#breadcrumbs .crumb.active{color:var(--text)}
+#breadcrumbs .sep{color:var(--text3);font-size:10px}
+/* ikon tipe berkas (Seti-style) */
+.fico{width:15px;height:15px;border-radius:4px;display:inline-grid;place-items:center;font-size:8.5px;font-weight:800;color:#fff;flex-shrink:0}
+
 /* ===== Editor area ===== */
 #editor-col{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--editor-bg)}
-#tabsbar{height:38px;background:var(--tab-bg);display:flex;align-items:stretch;border-bottom:1px solid var(--line);flex-shrink:0}
+#tabsbar{height:40px;background:var(--tab-bg);display:flex;align-items:stretch;border-bottom:1px solid var(--line);flex-shrink:0}
 #tabs{display:flex;overflow-x:auto;scrollbar-width:none}
 #tabs::-webkit-scrollbar{display:none}
-.tab{display:flex;align-items:center;gap:7px;padding:0 10px 0 13px;font-size:12.3px;color:var(--text2);cursor:pointer;border-right:1px solid var(--line);position:relative;white-space:nowrap;max-width:190px}
+.tab{display:flex;align-items:center;gap:7px;padding:0 12px 0 14px;font-size:12.6px;color:var(--text2);cursor:pointer;border-right:1px solid var(--line);position:relative;white-space:nowrap;max-width:190px}
 .tab .nm{overflow:hidden;text-overflow:ellipsis}
 .tab:hover{color:var(--text)}
 .tab.active{color:var(--text);background:var(--editor-bg)}
@@ -204,7 +215,7 @@ body.light #term{background:#101014}
 #statusbar .sb:hover{background:rgba(255,255,255,.14)}
 #statusbar .spacer{flex:1}
 #statusbar .err-c{color:#ffd7d5}#statusbar .warn-c{color:#ffe9b3}
-body.light #statusbar{background:#0071e3}
+body.light #statusbar{background:#131316}
 
 /* ===== Overlays ===== */
 #overlay-center{position:fixed;inset:0;z-index:950;display:none;align-items:flex-start;justify-content:center;padding-top:12vh;background:rgba(0,0,0,.35)}
@@ -256,13 +267,35 @@ body.light #statusbar{background:#0071e3}
 
 /* responsive */
 #hamb{display:none}
+#sb-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:630;display:none}
+#sb-backdrop.show{display:block}
 @media (max-width:780px){
   #menubar,#searchbox{display:none}
   #hamb{display:grid}
-  #sidebar{position:fixed;left:48px;top:44px;bottom:25px;z-index:400;box-shadow:var(--shadow)}
+  #sb-resize,#bt-resize{display:none}
+  #activitybar{position:fixed;left:0;right:0;bottom:0;width:100%;height:54px;flex-direction:row;justify-content:space-around;padding:0 6px;border-right:none;border-top:1px solid var(--line);z-index:520}
+  #activitybar .spacer{display:none}
+  .act-btn{width:52px;height:46px}
+  #main{padding-bottom:54px}
+  #sidebar{position:fixed;left:0;top:48px;bottom:54px;width:min(300px,85vw);z-index:640;display:none;box-shadow:var(--shadow)}
+  #sidebar.mobile-open{display:flex}
   #sidebar.hidden{display:none}
-  #bottom{height:180px}
+  .tree-item{padding:9px 8px;font-size:13.5px}
+  .dd-item{padding:11px 12px;font-size:13.5px}
+  #bottom{height:38%}
+  #bottom.hidden{display:none}
+  #bt-tabs .bt-tab{font-size:11.5px;padding:7px 11px}
+  #statusbar{overflow-x:auto}
+  #statusbar .sb{padding:0 7px;font-size:11px}
+  #sb-enc,#sb-eol{display:none}
   #welcome .big{font-size:32px}
+  #run-btn{height:34px;padding:0 10px;font-size:12px}
+  #palette-in input{font-size:13.5px}
+  .pal-item{padding:12px;font-size:13.5px}
+  #term,#term-input{font-size:12.5px}
+  #term-out{padding:8px 10px}
+  #term-in{padding:2px 10px 10px}
+  #tab-actions{display:none}
 }
 </style>
 </head>
@@ -273,11 +306,13 @@ body.light #statusbar{background:#0071e3}
   <button class="tb-btn" id="hamb" onclick="toggleSidebar()" title="Panel samping">
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
   </button>
-  <div id="logo"><div class="logo-ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6l-4 6 4 6M16 6l4 6-4 6"/></svg></div><span>Clincoo<b style="color:var(--text)"> Code</b></span></div>
+  <div id="logo"><img src="assets/favicon.svg" alt="Clincoo" class="logo-img"><span>Clincoo<b style="color:var(--text)"> Code</b></span></div>
   <nav id="menubar">
     <button class="menu-btn" data-menu="m-file">Berkas</button>
     <button class="menu-btn" data-menu="m-edit">Edit</button>
+    <button class="menu-btn" data-menu="m-sel">Pilihan</button>
     <button class="menu-btn" data-menu="m-view">Tampilan</button>
+    <button class="menu-btn" data-menu="m-go">Buka</button>
     <button class="menu-btn" data-menu="m-tools">Alat</button>
     <button class="menu-btn" data-menu="m-help">Bantuan</button>
   </nav>
@@ -311,12 +346,26 @@ body.light #statusbar{background:#0071e3}
   <div class="dd-item" onclick="edAction('quickCommand')">Palette Perintah <span class="kbd">Ctrl+Shift+P</span></div>
   <div class="dd-item" onclick="edAction('actions.find')">Cari & Ganti <span class="kbd">Ctrl+F</span></div>
 </div>
+<div class="dropdown" id="m-sel">
+  <div class="dd-item" onclick="edAction('editor.action.selectAll')">Pilih Semua <span class="kbd">Ctrl+A</span></div>
+  <div class="dd-item" onclick="edAction('editor.action.commentLine')">Komentari Baris <span class="kbd">Ctrl+/</span></div>
+  <div class="dd-item" onclick="edAction('editor.action.copyLinesDownAction')">Duplikat Baris <span class="kbd">Shift+Alt+↓</span></div>
+  <div class="dd-item" onclick="edAction('editor.action.moveLinesUpAction')">Pindahkan Baris ke Atas <span class="kbd">Alt+↑</span></div>
+  <div class="dd-item" onclick="edAction('editor.action.moveLinesDownAction')">Pindahkan Baris ke Bawah <span class="kbd">Alt+↓</span></div>
+  <div class="dd-item" onclick="edAction('editor.action.deleteLines')">Hapus Baris <span class="kbd">Ctrl+Shift+K</span></div>
+</div>
 <div class="dropdown" id="m-view">
   <div class="dd-item" onclick="toggleSidebar()">Panel Samping <span class="kbd">Ctrl+B</span></div>
   <div class="dd-item" onclick="toggleBottom()">Terminal <span class="kbd">Ctrl+`</span></div>
   <div class="dd-item" onclick="toggleTheme()">Ganti Tema</div>
   <div class="dd-sep"></div>
   <div class="dd-item" onclick="toggleZen()">Mode Zen</div>
+</div>
+<div class="dropdown" id="m-go">
+  <div class="dd-item" onclick="gotoLine()">Pergi ke Baris… <span class="kbd">Ctrl+G</span></div>
+  <div class="dd-item" onclick="edAction('editor.action.goToDeclaration')">Pergi ke Definisi <span class="kbd">F12</span></div>
+  <div class="dd-item" onclick="openPalette('files')">Buka Cepat Berkas <span class="kbd">Ctrl+P</span></div>
+  <div class="dd-item" onclick="showPanel('search')">Cari di Semua Berkas <span class="kbd">Ctrl+Shift+F</span></div>
 </div>
 <div class="dropdown" id="m-tools">
   <div class="dd-item" onclick="edAction('editor.action.formatDocument')">Format Dokumen <span class="kbd">Shift+Alt+F</span></div>
@@ -403,6 +452,7 @@ body.light #statusbar{background:#0071e3}
         <button class="tb-btn" onclick="splitEditor()" title="Bagi editor (split)" style="width:28px;height:28px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v18M3 12h18"/></svg></button>
       </div>
     </div>
+    <div id="breadcrumbs" class="hidden-crumb"></div>
     <div id="monaco-wrap">
       <div id="monaco"></div>
       <div id="welcome" class="show">
@@ -463,10 +513,11 @@ body.light #statusbar{background:#0071e3}
   <div class="sb" id="sb-enc">UTF-8</div>
   <div class="sb" id="sb-eol">LF</div>
   <div class="sb" id="sb-lang" onclick="openSettings()">Plain Text</div>
-  <div class="sb" onclick="openSettings()"> Clincoo Code</div>
+  <div class="sb" onclick="openSettings()"><img src="assets/favicon.svg" style="height:13px;border-radius:3px"> Clincoo Code</div>
 </div>
 
 <!-- overlays -->
+<div id="sb-backdrop" onclick="closeMobileSidebar()"></div>
 <div id="overlay-center"><div id="palette">
   <div id="palette-in">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
@@ -491,6 +542,17 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const LANGS={js:'javascript',mjs:'javascript',jsx:'javascript',ts:'typescript',tsx:'typescript',html:'html',htm:'html',css:'css',scss:'scss',json:'json',md:'markdown',py:'python',xml:'xml',svg:'xml',yml:'yaml',yaml:'yaml',txt:'plaintext',sh:'shell',sql:'sql',java:'java',c:'cpp',cpp:'cpp',cs:'csharp',go:'go',rs:'rust',php:'php',rb:'ruby',swift:'swift',kt:'kotlin'};
 const langOf=p=>LANGS[(p.split('.').pop()||'').toLowerCase()]||'plaintext';
 const nameOf=p=>p.split('/').pop();
+const FICO={js:['JS','#e8d44d'],mjs:['JS','#e8d44d'],jsx:['JS','#e8d44d'],ts:['TS','#3178c6'],tsx:['TS','#3178c6'],html:['<>','#e37933'],htm:['<>','#e37933'],css:['#','#519aba'],scss:['#','#cd6799'],json:['{}','#cbcb41'],md:['M','#519aba'],py:['PY','#3572A5'],sh:['$','#89e051'],yml:['Y','#cb171e'],yaml:['Y','#cb171e'],sql:['DB','#e38c00'],txt:['T','#9a9aa4'],svg:['SVG','#ffb13b'],png:['IMG','#a074c4'],jpg:['IMG','#a074c4'],jpeg:['IMG','#a074c4'],gif:['IMG','#a074c4']};
+const ficoHTML=p=>{const e=(p.split('.').pop()||'').toLowerCase();const f=FICO[e]||['F','#7a7a85'];return `<span class="fico" style="background:${f[1]}">${f[0]}</span>`;};
+function renderBreadcrumbs(){
+  const bc=$('#breadcrumbs');
+  if(!activePath){bc.innerHTML='';bc.style.display='none';return;}
+  bc.style.display='flex';
+  const parts=activePath.split('/');
+  bc.innerHTML='<span class="crumb" id="bc-root">clincoo-editor</span>'+parts.map((s,i)=>`<span class="sep">›</span><span class="crumb ${i===parts.length-1?'active':''}" data-bc="${i}">${ficoHTML(activePath)}${esc(s)}</span>`).join('');
+  const root=bc.querySelector('#bc-root');if(root)root.onclick=()=>showPanel('explorer');
+  parts.forEach((s,i)=>{const el=bc.querySelector(`[data-bc="${i}"]`);if(el)el.onclick=()=>openFile(activePath);});
+}
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 const FILES={
@@ -513,7 +575,7 @@ const FILES={
 </body>
 </html>`,
 'style.css':`:root{
-  --biru:#0a84ff;
+  --biru:#f5a623;
   --gelap:#141416;
 }
 *{margin:0;padding:0;box-sizing:border-box}
@@ -610,7 +672,7 @@ require(['vs/editor/editor.main'],function(){
   monaco.editor.setTheme(document.body.classList.contains('light')?'vs':'vs-dark');
   editor=monaco.editor.create($('#monaco'),{
     automaticLayout:true,
-    fontSize:parseFloat(localStorage.getItem('cc_font')||13.5),
+    fontSize:parseFloat(localStorage.getItem('cc_font')||14),
     fontFamily:"'Fira Code','JetBrains Mono',Menlo,Consolas,monospace",
     fontLigatures:true,
     minimap:{enabled:localStorage.getItem('cc_minimap')!=='off'},
@@ -653,7 +715,7 @@ function openFile(path,focus=true){
   editor.setModel(m);
   $('#welcome').classList.remove('show');
   renderAll();
-  if(focus)editor.focus();
+  if(focus){editor.focus();closeMobileSidebar();}
 }
 function openDefaultTabs(){
   openFile('index.html',false);
@@ -728,8 +790,7 @@ function renderTree(){
     node.files.sort((a,b)=>nameOf(a).localeCompare(nameOf(b))).forEach(p=>{
       const item=document.createElement('div');
       item.className='tree-item'+(p===activePath?' active':'');
-      item.innerHTML=`<span class="tw"></span>
-      <svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+      item.innerHTML=`<span class="tw"></span>${ficoHTML(p)}
       <span class="nm">${esc(nameOf(p))}</span>${dirty.has(p)?'<span class="badge M">M</span>':''}`;
       item.onclick=()=>openFile(p);
       item.oncontextmenu=e=>ctxMenu(e,p,false);
@@ -753,16 +814,18 @@ function renderTabs(){
   tabs.forEach(p=>{
     const d=document.createElement('div');
     d.className='tab'+(p===activePath?' active':'')+(models[p]&&models[p].getValue()!==project[p]?' dirty':'');
-    d.innerHTML=`<span class="nm">${esc(nameOf(p))}</span><span class="dirty"></span><span class="x"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>`;
+    d.innerHTML=`${ficoHTML(p)}<span class="nm">${esc(nameOf(p))}</span><span class="dirty"></span><span class="x"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>`;
     d.onclick=e=>{if(e.target.closest('.x'))closeTab(p);else openFile(p);};
     wrap.appendChild(d);
   });
+  renderBreadcrumbs();
   $('#sb-lang').textContent=activePath?({javascript:'JavaScript',typescript:'TypeScript',html:'HTML',css:'CSS',json:'JSON',markdown:'Markdown',python:'Python',plaintext:'Plain Text'}[langOf(activePath)]||langOf(activePath)):'—';
 }
 
 /* ---------- Panels ---------- */
 function showPanel(name){
   sbOpen=true;$('#sidebar').classList.remove('hidden');
+  if(isMobile()){$('#sidebar').classList.add('mobile-open');$('#sb-backdrop').classList.add('show');}
   $$('.panel').forEach(p=>p.classList.remove('show'));
   $('#p-'+name).classList.add('show');
   $$('.act-btn').forEach(b=>b.classList.toggle('active',b.dataset.panel===name));
@@ -772,10 +835,19 @@ $$('.act-btn').forEach(b=>b.onclick=()=>{
   if(b.classList.contains('active')&&sbOpen){$('#sidebar').classList.add('hidden');sbOpen=false;}
   else showPanel(b.dataset.panel);
 });
+const isMobile=()=>matchMedia('(max-width:780px)').matches;
 function toggleSidebar(){
+  if(isMobile()){
+    const open=$('#sidebar').classList.toggle('mobile-open');
+    $('#sb-backdrop').classList.toggle('show',open);
+    return;
+  }
   sbOpen=!sbOpen;
   $('#sidebar').classList.toggle('hidden',!sbOpen);
   if(sbOpen&&$$('.panel.show').length===0)showPanel('explorer');
+}
+function closeMobileSidebar(){
+  if(isMobile()){$('#sidebar').classList.remove('mobile-open');$('#sb-backdrop').classList.remove('show');}
 }
 function toggleBottom(){
   bottomOpen=!bottomOpen;
@@ -851,7 +923,7 @@ function doCommit(){
 const EXTS=[
   ['Pr','Prettier','Formatter kode otomatis untuk semua bahasa','#e5b454'],
   ['ES','ESLint','Deteksi error & style pada JavaScript','#4b32c3'],
-  ['LS','Live Preview','Reload otomatis saat menyimpan berkas','#0a84ff'],
+  ['LS','Live Preview','Reload otomatis saat menyimpan berkas','#e37933'],
   ['TK','Theme Kit','Paket tema ikon & warna tambahan','#2fbf71'],
   ['GM','GitLens','Sejarah & blame per baris kode','#e55454'],
 ];
@@ -1062,8 +1134,8 @@ function doReset(){
 function openSettings(){
   openModal(`<div class="modal">
     <h3>⚙ Pengaturan Editor</h3>
-    <label>Ukuran font: <b id="fs-val">${(localStorage.getItem('cc_font')||13.5)}</b></label>
-    <input type="range" min="11" max="22" step="0.5" value="${localStorage.getItem('cc_font')||13.5}" style="width:100%" oninput="setFontSize(this.value)">
+    <label>Ukuran font: <b id="fs-val">${(localStorage.getItem('cc_font')||14)}</b></label>
+    <input type="range" min="11" max="22" step="0.5" value="${localStorage.getItem('cc_font')||14}" style="width:100%" oninput="setFontSize(this.value)">
     <label>Indentasi (spasi)</label>
     <select onchange="setIndent(this.value)">
       <option value="2" ${localStorage.getItem('cc_tab')==='2'?'selected':''}>2 spasi</option>
@@ -1144,6 +1216,7 @@ $$('.menu-btn').forEach(b=>b.onclick=e=>{
 
 /* ---------- Misc ---------- */
 function edAction(id){if(!editor)return;editor.getAction(id)?.run?.();}
+function gotoLine(){if(!editor||!activePath){toast('Buka berkas dulu');return;}editor.getAction('editor.action.gotoLine')?.run();}
 function splitEditor(){
   if(!editor)return;
   const l=monaco.editor.create($('#monaco'),{automaticLayout:true,theme:document.body.classList.contains('light')?'vs':'vs-dark'});
@@ -1199,12 +1272,14 @@ window.addEventListener('keydown',e=>{
   else if(mod&&e.key.toLowerCase()==='w'){e.preventDefault();if(activePath)closeTab(activePath);}
   else if(mod&&e.shiftKey&&e.key.toLowerCase()==='e'){e.preventDefault();showPanel('explorer');}
   else if(mod&&e.shiftKey&&e.key.toLowerCase()==='f'){e.preventDefault();showPanel('search');$('#search-all').focus();}
+  else if(mod&&e.key.toLowerCase()==='g'){e.preventDefault();gotoLine();}
   else if(e.key==='F5'){e.preventDefault();runPreview();}
   else if(e.key==='Escape'){closePalette();closeModal();}
 });
 $('#search-all').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
 
 /* ---------- Init ---------- */
+if(matchMedia('(max-width:780px)').matches){$('#bottom').classList.add('hidden');bottomOpen=false;}
 project=loadProject();
 if(localStorage.getItem('cc_theme')==='light')document.body.classList.add('light');
 $('#sb-indent').textContent='Spasi: '+(localStorage.getItem('cc_tab')||'2');
