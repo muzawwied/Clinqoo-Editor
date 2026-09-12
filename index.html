@@ -245,16 +245,27 @@ body.light #term{background:#101014}
 body.light #statusbar{background:#131316}
 
 /* ===== Overlays ===== */
-#overlay-center{position:fixed;inset:0;z-index:950;display:none;align-items:flex-start;justify-content:center;padding-top:12vh;background:rgba(0,0,0,.35)}
+#overlay-center{position:fixed;inset:0;z-index:950;display:none;align-items:flex-start;justify-content:center;padding-top:13vh;background:rgba(0,0,0,.38);backdrop-filter:blur(3px)}
 #overlay-center.show{display:flex}
-#palette{width:min(580px,92vw);background:var(--bg3);border:1px solid var(--line2);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
-#palette-in{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+#palette{width:min(600px,92vw);background:var(--bg3);border:1px solid var(--line2);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;animation:pal-in .16s cubic-bezier(.2,.9,.3,1)}
+@keyframes pal-in{from{opacity:0;transform:translateY(-8px) scale(.985)}to{opacity:1;transform:none}}
+#palette-in{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)}
+#palette-mode{height:22px;padding:0 11px;border-radius:11px;background:var(--accent-soft);color:var(--accent);font-size:10px;font-weight:700;letter-spacing:.07em;display:inline-flex;align-items:center;cursor:pointer;flex-shrink:0;border:none;font-family:inherit}
+#palette-mode:hover{filter:brightness(1.2)}
 #palette-in input{flex:1;background:none;border:none;outline:none;font-size:14.5px;color:var(--text)}
+#palette-in input::placeholder{color:var(--text3)}
+#palette-in .esc{font-size:10px;color:var(--text3);font-family:'Fira Code',monospace;flex-shrink:0}
 #palette-list{max-height:330px;overflow-y:auto;padding:6px}
-.pal-item{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:9px;cursor:pointer;font-size:13px}
-.pal-item .sub{color:var(--text3);font-size:11px;margin-left:auto;white-space:nowrap}
-.pal-item.sel{background:var(--accent-soft);color:var(--accent)}
-.pal-item.sel .sub{color:var(--accent)}
+.pal-item{display:flex;align-items:center;gap:11px;padding:8px 11px 8px 10px;border-radius:9px;cursor:pointer;font-size:13px;position:relative}
+.pal-item .pal-ico{width:26px;height:26px;border-radius:7px;background:var(--bg);display:grid;place-items:center;color:var(--text2);flex-shrink:0}
+.pal-item .sub{color:var(--text3);font-size:10.5px;margin-left:auto;white-space:nowrap;font-family:'Fira Code',monospace}
+.pal-item.sel{background:var(--accent-soft)}
+.pal-item.sel::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:2.5px;border-radius:2px;background:var(--accent)}
+.pal-item.sel .pal-ico{background:var(--accent);color:#fff}
+.pal-item.sel .sub{color:var(--text2)}
+#palette-foot{display:flex;align-items:center;gap:14px;padding:8px 14px;border-top:1px solid var(--line);font-size:10.5px;color:var(--text3);background:var(--bg2)}
+#palette-foot kbd{font-family:inherit;background:var(--bg4);border:1px solid var(--line2);border-radius:5px;padding:1px 6px;font-size:10px;color:var(--text2);margin-right:4px}
+#palette-foot .spacer{margin-left:auto}
 
 #overlay-modal{position:fixed;inset:0;z-index:960;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45)}
 #overlay-modal.show{display:flex}
@@ -278,11 +289,23 @@ body.light #statusbar{background:#131316}
 .btn.ghost:hover{color:var(--text)}
 .btn.danger{background:rgba(229,84,84,.14);color:var(--err)}
 
-/* preview */
-#preview-modal .frame-wrap{width:min(1100px,94vw);height:min(720px,86vh);background:var(--bg3);border:1px solid var(--line2);border-radius:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
-#preview-head{height:46px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line)}
-#preview-head .url{flex:1;height:30px;background:var(--bg);border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;padding:0 12px;font-family:'Fira Code',monospace;font-size:11.5px;color:var(--text2);overflow:hidden;white-space:nowrap}
-#preview-frame{flex:1;border:none;background:#fff}
+/* ===== Pratinjau melayang ala HP (drag + resize + auto-update) ===== */
+#phone-preview{position:fixed;z-index:970;display:none;--ph-w:390px;--ph-h:780px}
+#phone-preview.show{display:block}
+#phone-preview.dragging .ph-head{cursor:grabbing}
+#phone-preview.dragging iframe,#phone-preview.resizing iframe{pointer-events:none}
+.ph-frame{position:relative;width:var(--ph-w);height:var(--ph-h);max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);background:#0c0c0f;padding:8px;border-radius:30px;border:1px solid rgba(255,255,255,.09);box-shadow:0 26px 70px rgba(0,0,0,.55);box-sizing:border-box}
+.ph-screen{width:100%;height:100%;border-radius:22px;overflow:hidden;display:flex;flex-direction:column;background:var(--bg2)}
+.ph-head{position:relative;height:40px;display:flex;align-items:center;gap:5px;padding:0 8px 0 10px;background:var(--bg2);border-bottom:1px solid var(--line);cursor:grab;flex-shrink:0;touch-action:none}
+.ph-slit{position:absolute;left:50%;top:17px;transform:translateX(-50%);width:52px;height:5px;border-radius:3px;background:var(--line2);pointer-events:none}
+.ph-url{flex:1;height:24px;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:7px;display:flex;align-items:center;padding:0 9px;font-family:'Fira Code',monospace;font-size:10px;color:var(--text2);overflow:hidden;white-space:nowrap}
+.ph-btn{width:25px;height:25px;border-radius:7px;background:none;border:none;color:var(--text2);display:grid;place-items:center;cursor:pointer;flex-shrink:0;padding:0}
+.ph-btn:hover{background:var(--bg4);color:var(--text)}
+.ph-btn.ph-close:hover{background:rgba(229,84,84,.16);color:var(--err)}
+#phone-preview iframe{flex:1;border:none;background:#fff}
+.ph-resize{position:absolute;right:0;bottom:0;width:22px;height:22px;cursor:nwse-resize;display:grid;place-items:center;color:rgba(255,255,255,.35);touch-action:none}
+.ph-resize::before{content:'';width:9px;height:9px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;border-radius:0 0 3px 0}
+.ph-resize:hover{color:rgba(255,255,255,.7)}
 
 /* context menu */
 #ctxmenu{position:fixed;z-index:980;display:none;min-width:180px}
@@ -560,13 +583,33 @@ body.light #statusbar{background:#131316}
 <div id="sb-backdrop" onclick="closeMobileSidebar()"></div>
 <div id="overlay-center"><div id="palette">
   <div id="palette-in">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <button id="palette-mode" onclick="openPalette(palMode==='files'?'cmd':'files')" title="Ganti mode (berkas/perintah)">PERINTAH</button>
     <input id="palette-input" placeholder="Ketik perintah atau nama berkas…">
+    <span class="esc">ESC</span>
   </div>
   <div id="palette-list"></div>
+  <div id="palette-foot"><span id="pal-count"></span><span class="spacer"></span><span><kbd>↑↓</kbd>navigasi</span><span><kbd>↵</kbd>buka</span></div>
 </div></div>
 
 <div id="overlay-modal"></div>
+
+<!-- Pratinjau melayang ala HP -->
+<div id="phone-preview">
+  <div class="ph-frame">
+    <div class="ph-screen">
+      <div class="ph-head" id="ph-head">
+        <span class="ph-slit"></span>
+        <div class="ph-url" id="ph-url">clincoo.local/proyek/index.html</div>
+        <button class="ph-btn" onclick="phPreset('phone')" title="Ukuran HP (390×780)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2.5"/></svg></button>
+        <button class="ph-btn" onclick="phPreset('tablet')" title="Ukuran tablet (600×820)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2.5"/></svg></button>
+        <button class="ph-btn" onclick="phPreset('desktop')" title="Ukuran desktop (900×600)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8"/></svg></button>
+        <button class="ph-btn ph-close" onclick="closePreview()" title="Tutup pratinjau">✕</button>
+      </div>
+      <iframe id="preview-frame" title="Pratinjau"></iframe>
+    </div>
+    <div class="ph-resize" id="ph-resize" title="Geser untuk mengubah ukuran"></div>
+  </div>
+</div>
 
 <div class="dropdown" id="ctxmenu"></div>
 <div id="toast"></div>
@@ -846,7 +889,7 @@ require(['vs/editor/editor.main'],function(){
 function modelFor(path){
   if(!models[path]){
     models[path]=monaco.editor.createModel(project[path]||'',langOf(path),monaco.Uri.parse('inmemory:/'+path));
-    models[path].onDidChangeContent(()=>{renderTabs();updateGit();});
+    models[path].onDidChangeContent(()=>{renderTabs();updateGit();phRefresh();});
   }
   return models[path];
 }
@@ -1147,75 +1190,163 @@ function outPrint(msg){
 }
 
 /* ---------- Preview ---------- */
+function liveVal(p){const m=models[p];return (m&&m.getValue)?m.getValue():(project[p]!==undefined?project[p]:undefined);}
 function buildPreview(){
-  let html=project['index.html'];
+  let html=liveVal('index.html');
   if(html===undefined){
     const firstHtml=Object.keys(project).find(p=>p.endsWith('.html'));
     if(!firstHtml)return null;
-    html=project[firstHtml];
+    html=liveVal(firstHtml);
   }
+  const liveAll={};Object.keys(project).forEach(p=>liveAll[p]=liveVal(p));
   html=html.replace(/<link[^>]*href=["']([^"']+\.css)["'][^>]*>/gi,(m,href)=>{
-    const f=project[href]!==undefined?href:Object.keys(project).find(p=>nameOf(p)===href);
-    return f&&project[f]!==undefined?'<style>'+project[f]+'</style>':m;
+    const f=liveAll[href]!==undefined?href:Object.keys(project).find(p=>nameOf(p)===href);
+    return f&&liveAll[f]!==undefined?'<style>'+liveAll[f]+'</style>':m;
   });
   html=html.replace(/<script[^>]*src=["']([^"']+\.(?:js|mjs))["'][^>]*><\/script>/gi,(m,src)=>{
-    const f=project[src]!==undefined?src:Object.keys(project).find(p=>nameOf(p)===src);
-    return f&&project[f]!==undefined?'<script>'+project[f].replace(/<\/script>/gi,'<\\/script>')+'<\/script>':m;
+    const f=liveAll[src]!==undefined?src:Object.keys(project).find(p=>nameOf(p)===src);
+    return f&&liveAll[f]!==undefined?'<script>'+liveAll[f].replace(/<\/script>/gi,'<\\/script>')+'<\/script>':m;
   });
   return html;
+}
+const PH_PRESETS={phone:{w:390,h:780},tablet:{w:600,h:820},desktop:{w:900,h:600}};
+let phState=null,phTimer=null;
+function phSaveState(){try{localStorage.setItem('cc_ph_state',JSON.stringify(phState));}catch(e){}}
+function phLoadState(){try{phState=JSON.parse(localStorage.getItem('cc_ph_state'))||null;}catch(e){phState=null;}}
+function phApply(){
+  if(!phState)return;
+  const pv=$('#phone-preview');
+  if(phState.x!=null)pv.style.left=phState.x+'px';
+  if(phState.y!=null)pv.style.top=phState.y+'px';
+  pv.style.setProperty('--ph-w',Math.max(200,Math.min(phState.w||390,innerWidth-16))+'px');
+  pv.style.setProperty('--ph-h',Math.max(240,Math.min(phState.h||780,innerHeight-16))+'px');
+}
+function phClamp(){
+  const pv=$('#phone-preview'),w=pv.offsetWidth||300,h=pv.offsetHeight||500;
+  phState=phState||{};
+  phState.x=Math.max(24-w,Math.min(pv.offsetLeft,innerWidth-64));
+  phState.y=Math.max(0,Math.min(pv.offsetTop,innerHeight-56));
+  phApply();
+}
+function phPreset(sz){
+  const p=PH_PRESETS[sz]||PH_PRESETS.phone;
+  phState=phState||{};
+  phState.w=Math.min(p.w,innerWidth-16);phState.h=Math.min(p.h,innerHeight-16);
+  phApply();phSaveState();phRefresh();
 }
 function runPreview(){
   const html=buildPreview();
   if(html===null){toast('Tidak ada berkas HTML untuk pratinjau');return;}
-  openModal(`<div class="frame-wrap">
-    <div id="preview-head">
-      <span style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--ok)"><path d="M6 4l14 8-14 8z"/></svg> Pratinjau</span>
-      <div class="url">clincoo.local/proyek/index.html</div>
-      <button class="btn ghost" onclick="document.getElementById('overlay-modal').classList.remove('show');document.getElementById('overlay-modal').innerHTML=''">Tutup ✕</button>
-    </div>
-    <iframe id="preview-frame"></iframe>
-  </div>`);
+  const pv=$('#phone-preview');
+  if(!pv.classList.contains('show')){
+    phLoadState();
+    if(!phState||!phState.w){phState={w:Math.min(390,innerWidth-24),h:Math.min(780,innerHeight-24)};}
+    if(phState.x==null){phState.x=Math.max(8,innerWidth-phState.w-28);}
+    if(phState.y==null){phState.y=Math.max(10,Math.min(innerHeight-phState.h-28,Math.round(innerHeight*0.08)));}
+    pv.classList.add('show');
+    phApply();phClamp();phSaveState();
+  }
   $('#preview-frame').srcdoc=html;
   outPrint('▶ Pratinjau dijalankan — <b>'+new Date().toLocaleTimeString('id-ID')+'</b>');
 }
+function closePreview(){$('#phone-preview').classList.remove('show');outPrint('■ Pratinjau ditutup');}
+function phRefresh(){
+  if(!$('#phone-preview').classList.contains('show'))return;
+  clearTimeout(phTimer);
+  phTimer=setTimeout(()=>{const h=buildPreview();if(h!==null)$('#preview-frame').srcdoc=h;},650);
+}
+(function(){
+  const pv=document.getElementById('phone-preview'),head=document.getElementById('ph-head'),rz=document.getElementById('ph-resize');
+  if(!pv||!head)return;
+  let drag=false,sx=0,sy=0,ox=0,oy=0;
+  head.addEventListener('pointerdown',e=>{
+    if(e.target.closest('.ph-btn'))return;
+    drag=true;pv.classList.add('dragging');head.setPointerCapture(e.pointerId);
+    sx=e.clientX;sy=e.clientY;ox=pv.offsetLeft;oy=pv.offsetTop;e.preventDefault();
+  });
+  head.addEventListener('pointermove',e=>{
+    if(!drag)return;
+    phState=phState||{};
+    phState.x=Math.max(24-pv.offsetWidth,Math.min(ox+e.clientX-sx,innerWidth-64));
+    phState.y=Math.max(0,Math.min(oy+e.clientY-sy,innerHeight-56));
+    phApply();
+  });
+  const dEnd=()=>{if(drag){drag=false;pv.classList.remove('dragging');phSaveState();}};
+  head.addEventListener('pointerup',dEnd);head.addEventListener('pointercancel',dEnd);
+  if(!rz)return;
+  let rs=false,sw=0,sh=0;
+  rz.addEventListener('pointerdown',e=>{
+    rs=true;pv.classList.add('resizing');rz.setPointerCapture(e.pointerId);
+    sw=pv.offsetWidth;sh=pv.offsetHeight;sx=e.clientX;sy=e.clientY;e.preventDefault();
+  });
+  rz.addEventListener('pointermove',e=>{
+    if(!rs)return;
+    phState=phState||{};
+    phState.w=Math.max(280,Math.min(sw+e.clientX-sx,innerWidth-16));
+    phState.h=Math.max(320,Math.min(sh+e.clientY-sy,innerHeight-16));
+    phApply();
+  });
+  const rEnd=()=>{if(rs){rs=false;pv.classList.remove('resizing');phSaveState();phRefresh();}};
+  rz.addEventListener('pointerup',rEnd);rz.addEventListener('pointercancel',rEnd);
+  window.addEventListener('resize',()=>{if(pv.classList.contains('show')){phClamp();phApply();}});
+})();
 
 /* ---------- Palette ---------- */
+const PAL_ICONS={
+  save:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>',
+  saveAll:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/><path d="M9 12h.01M13 12h.01M15 12h6l-2-2m2 2l-2 2"/></svg>',
+  newFile:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6M9 15h6"/></svg>',
+  format:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h12M3 18h9"/><path d="M19 13l3 3-3 3"/></svg>',
+  search:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
+  run:'<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8-14 8z"/></svg>',
+  terminal:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-5-6-5"/><path d="M12 19h8"/></svg>',
+  theme:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>',
+  zen:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 00-2 2v3"/><path d="M16 3h3a2 2 0 012 2v3"/><path d="M8 21H5a2 2 0 01-2-2v-3"/><path d="M16 21h3a2 2 0 002-2v-3"/></svg>',
+  settings:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 008 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H2a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V2a2 2 0 114 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>',
+  split:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/></svg>',
+  close:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+  reset:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 109-9"/><path d="M3 4v5h5"/></svg>',
+  file:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>'
+};
 const COMMANDS=[
-  {t:'Simpan berkas',s:'Ctrl+S',fn:()=>saveActive()},
-  {t:'Simpan semua berkas',s:'',fn:()=>saveAll()},
-  {t:'Berkas baru',s:'Ctrl+N',fn:()=>newFileModal()},
-  {t:'Format dokumen',s:'Shift+Alt+F',fn:()=>edAction('editor.action.formatDocument')},
-  {t:'Cari di semua berkas',s:'Ctrl+Shift+F',fn:()=>{showPanel('search');$('#search-all').focus();}},
-  {t:'Jalankan pratinjau',s:'F5',fn:()=>runPreview()},
-  {t:'Buka terminal',s:'Ctrl+`',fn:()=>{if(!bottomOpen)toggleBottom();$$('.bt-tab')[0].click();$('#term-input').focus();}},
-  {t:'Ganti tema terang/gelap',s:'',fn:()=>toggleTheme()},
-  {t:'Mode Zen',s:'',fn:()=>toggleZen()},
-  {t:'Pengaturan editor',s:'',fn:()=>openSettings()},
-  {t:'Bagi editor (split)',s:'',fn:()=>splitEditor()},
-  {t:'Tutup tab aktif',s:'Ctrl+W',fn:()=>closeTab(activePath)},
-  {t:'Reset proyek ke contoh awal',s:'',fn:()=>resetProject()},
+  {t:'Simpan berkas',s:'Ctrl+S',i:'save',fn:()=>saveActive()},
+  {t:'Simpan semua berkas',s:'',i:'saveAll',fn:()=>saveAll()},
+  {t:'Berkas baru',s:'Ctrl+N',i:'newFile',fn:()=>newFileModal()},
+  {t:'Format dokumen',s:'Shift+Alt+F',i:'format',fn:()=>edAction('editor.action.formatDocument')},
+  {t:'Cari di semua berkas',s:'Ctrl+Shift+F',i:'search',fn:()=>{showPanel('search');$('#search-all').focus();}},
+  {t:'Jalankan pratinjau',s:'F5',i:'run',fn:()=>runPreview()},
+  {t:'Buka terminal',s:'Ctrl+`',i:'terminal',fn:()=>{if(!bottomOpen)toggleBottom();$$('.bt-tab')[0].click();$('#term-input').focus();}},
+  {t:'Ganti tema terang/gelap',s:'',i:'theme',fn:()=>toggleTheme()},
+  {t:'Mode Zen',s:'',i:'zen',fn:()=>toggleZen()},
+  {t:'Pengaturan editor',s:'',i:'settings',fn:()=>openSettings()},
+  {t:'Bagi editor (split)',s:'',i:'split',fn:()=>splitEditor()},
+  {t:'Tutup tab aktif',s:'Ctrl+W',i:'close',fn:()=>closeTab(activePath)},
+  {t:'Reset proyek ke contoh awal',s:'',i:'reset',fn:()=>resetProject()},
 ];
 let palMode='cmd',palSel=0,palItems=[];
 function openPalette(mode='cmd'){
   palMode=mode;palSel=0;
   $('#overlay-center').classList.add('show');
+  const md=$('#palette-mode');
+  if(md)md.textContent=mode==='files'?'BERKAS':'PERINTAH';
   const inp=$('#palette-input');
-  inp.value='';inp.placeholder=mode==='files'?'Nama berkas…':'Ketik perintah…';
+  inp.value='';inp.placeholder=mode==='files'?'Cari nama berkas…':'Ketik perintah…';
   inp.focus();renderPalette('');
 }
 function renderPalette(q){
   q=q.toLowerCase();
   const list=$('#palette-list');
   if(palMode==='files'){
-    palItems=Object.keys(project).filter(p=>p.toLowerCase().includes(q)).map(p=>({t:nameOf(p),s:p,fn:()=>openFile(p)}));
+    palItems=Object.keys(project).filter(p=>p.toLowerCase().includes(q)).map(p=>({t:nameOf(p),s:p,i:'file',fn:()=>openFile(p)}));
   }else{
     palItems=COMMANDS.filter(c=>c.t.toLowerCase().includes(q));
   }
+  const cnt=$('#pal-count');
+  if(cnt)cnt.textContent=palItems.length+(palMode==='files'?' berkas ditemukan':' perintah tersedia');
   if(!palItems.length){list.innerHTML='<div class="empty-note">Tidak ada hasil.</div>';return;}
   palSel=Math.min(palSel,palItems.length-1);
   list.innerHTML=palItems.map((c,i)=>`<div class="pal-item ${i===palSel?'sel':''}" data-i="${i}">
-    <span style="width:15px;display:grid;place-items:center;color:var(--text3)">${palMode==='files'?'⌘':'›'}</span>
+    <span class="pal-ico">${PAL_ICONS[c.i]||PAL_ICONS.file}</span>
     <span>${esc(c.t)}</span><span class="sub">${esc(c.s||'')}</span></div>`).join('');
   $$('.pal-item').forEach(el=>{
     el.onclick=()=>{const c=palItems[+el.dataset.i];closePalette();c.fn();};
