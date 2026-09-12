@@ -127,7 +127,7 @@ svg{flex-shrink:0}
 /* extensions */
 .ext-card{display:flex;gap:10px;padding:9px;border-radius:9px;cursor:default;margin-bottom:6px}
 .ext-card:hover{background:var(--bg4)}
-.ext-ic{width:38px;height:38px;border-radius:9px;display:grid;place-items:center;font-weight:800;font-size:15px;color:#fff;flex-shrink:0}
+.ext-ic{width:38px;height:38px;display:grid;place-items:center;font-weight:800;font-size:16px;flex-shrink:0;letter-spacing:-.02em}
 .ext-nm{font-weight:600;font-size:12.5px}
 .ext-ds{font-size:11.5px;color:var(--text2);line-height:1.45;margin-top:2px}
 .ext-chip{font-size:10px;font-weight:700;color:var(--text2);background:rgba(182,182,194,.14);padding:2px 8px;border-radius:6px;margin-top:5px;display:inline-block}
@@ -141,6 +141,27 @@ svg{flex-shrink:0}
 #breadcrumbs .sep{color:var(--text3);font-size:10px}
 /* ikon tipe berkas (Seti-style) */
 .fico{width:15px;height:15px;border-radius:4px;display:inline-grid;place-items:center;font-size:8.5px;font-weight:800;color:#fff;flex-shrink:0}
+
+/* ===== Quick tools (tools lengkap ala editor mobile) ===== */
+#quicktools{height:40px;display:flex;align-items:center;background:var(--bg2);border-bottom:1px solid var(--line);flex-shrink:0;padding:0 6px;gap:6px}
+.qt-fixed{display:flex;align-items:center;gap:2px;flex-shrink:0}
+.qt-btn{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--text2);font-size:13px;font-weight:700;flex-shrink:0}
+.qt-btn:hover{background:var(--bg4);color:var(--text)}
+.qt-sep{width:1px;height:20px;background:var(--line);flex-shrink:0}
+.qt-swatch{width:16px;height:16px;border-radius:50%;background:conic-gradient(from 180deg,#ff5f5f,#ffd15f,#6bff6b,#5fd8ff,#7a6bff,#ff5fd1,#ff5f5f);border:1.5px solid var(--line2)}
+.qt-snippets{flex:1;display:flex;align-items:center;gap:6px;overflow-x:auto;scrollbar-width:none;min-width:0}
+.qt-snippets::-webkit-scrollbar{display:none}
+.qt-chip{flex-shrink:0;height:28px;padding:0 11px;border-radius:7px;background:var(--bg3);border:1px solid var(--line);color:var(--text);font-family:'Fira Code',monospace;font-size:12px;white-space:nowrap}
+.qt-chip:hover{border-color:var(--line2);background:var(--bg4)}
+/* color picker popover */
+#color-picker{position:fixed;z-index:970;display:none;background:var(--bg3);border:1px solid var(--line2);border-radius:12px;box-shadow:var(--shadow);padding:12px;width:216px}
+#color-picker.show{display:block}
+.cp-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-bottom:10px}
+.cp-swatch{width:20px;height:20px;border-radius:6px;border:1px solid rgba(0,0,0,.15);cursor:pointer}
+.cp-swatch:hover{transform:scale(1.15)}
+.cp-hexrow{display:flex;gap:6px}
+.cp-hexrow input{flex:1;height:30px;background:var(--bg);border:1px solid var(--line2);border-radius:7px;padding:0 9px;font-size:12px;font-family:'Fira Code',monospace;outline:none}
+.cp-hexrow button{height:30px;padding:0 12px;border-radius:7px;background:var(--btn-bg);color:#fff;font-size:12px;font-weight:600}
 
 /* ===== Editor area ===== */
 #editor-col{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--editor-bg)}
@@ -456,6 +477,19 @@ body.light #statusbar{background:#131316}
       </div>
     </div>
     <div id="breadcrumbs" class="hidden-crumb"></div>
+    <div id="quicktools">
+      <div class="qt-fixed">
+        <button class="qt-btn" onclick="edAction('undo')" title="Urungkan"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7L3 8"/></svg></button>
+        <button class="qt-btn" onclick="edAction('redo')" title="Ulangi"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M21 13a9 9 0 1 1-3-7.7L21 8"/></svg></button>
+        <button class="qt-btn" onclick="qtInsert('\t')" title="Tab">⇥</button>
+        <button class="qt-btn" onclick="qtMoveCursor(-1)" title="Kiri"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <button class="qt-btn" onclick="qtMoveCursor(1)" title="Kanan"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+        <button class="qt-btn qt-color" onclick="toggleColorPicker(event)" title="Pemetik warna"><span class="qt-swatch" id="qt-swatch-dot"></span></button>
+      </div>
+      <div class="qt-sep"></div>
+      <div class="qt-snippets" id="qt-snippets"></div>
+    </div>
+    <div id="color-picker"></div>
     <div id="monaco-wrap">
       <div id="monaco"></div>
       <div id="welcome" class="show">
@@ -547,6 +581,73 @@ const langOf=p=>LANGS[(p.split('.').pop()||'').toLowerCase()]||'plaintext';
 const nameOf=p=>p.split('/').pop();
 const FICO={js:['JS','#8a8a94'],mjs:['JS','#8a8a94'],jsx:['JS','#8a8a94'],ts:['TS','#6c6c76'],tsx:['TS','#6c6c76'],html:['<>','#7a7a85'],htm:['<>','#7a7a85'],css:['#','#9a9aa4'],scss:['#','#9a9aa4'],json:['{}','#a8a8b2'],md:['M','#88888f'],py:['PY','#5e5e68'],sh:['$','#76767f'],yml:['Y','#9a9aa4'],yaml:['Y','#9a9aa4'],sql:['DB','#6c6c76'],txt:['T','#8a8a94'],svg:['SVG','#76767f'],png:['IMG','#82828c'],jpg:['IMG','#82828c'],jpeg:['IMG','#82828c'],gif:['IMG','#82828c']};
 const ficoHTML=p=>{const e=(p.split('.').pop()||'').toLowerCase();const f=FICO[e]||['F','#7a7a85'];return `<span class="fico" style="background:${f[1]}">${f[0]}</span>`;};
+/* ---------- Quick tools (tools lengkap: snippet, undo/redo, tab, color picker) ---------- */
+const SNIPPETS={
+  html:['<div>|</div>','<a href="|"></a>','<img src="|" alt="">',' class="|"',' id="|"','<!-- | -->','<span>|</span>','</','>','<','-','&nbsp;'],
+  css:['{\n\t|\n}',':',';','%','px','rem','.class{|}','#id{|}',':hover{|}','@media{|}'],
+  javascript:['(|)','{|}','[|]','=>','console.log(|)','function () {|}','const |','===','!==','; '],
+  typescript:['(|)','{|}','[|]','=>','console.log(|)','function (): void {|}','const |: string','interface |{}','===','!=='],
+  markdown:['**|**','_|_','# |','- |','[|]()','```|```','> |'],
+  json:['{|}','[|]',':',',','"|": ""'],
+  plaintext:['{','}','(',')','[',']','<','>','=','-'],
+};
+function currentSnippets(){
+  if(!activePath)return SNIPPETS.plaintext;
+  return SNIPPETS[langOf(activePath)]||SNIPPETS.plaintext;
+}
+function renderQuickTools(){
+  const el=$('#qt-snippets');
+  const list=currentSnippets();
+  el.innerHTML=list.map((s,i)=>`<button class="qt-chip" data-qi="${i}">${esc(s.replace(/\|/g,'').replace(/\n/g,' ').replace(/\t/g,''))||' '}</button>`).join('');
+  $$('#qt-snippets .qt-chip').forEach(btn=>{btn.onclick=()=>qtInsert(list[+btn.dataset.qi]);});
+}
+function qtInsert(snippet){
+  if(!editor||!activePath){toast('Buka berkas dulu');return;}
+  const text=snippet.split('\n').join('\n');
+  const idx=text.indexOf('|');
+  const clean=idx>=0?text.replace('|',''):text;
+  const sel=editor.getSelection();
+  const start=sel.getStartPosition();
+  editor.executeEdits('quicktools',[{range:sel,text:clean,forceMoveMarkers:true}]);
+  if(idx>=0){
+    const before=clean.slice(0,idx);
+    const beforeLines=before.split('\n');
+    const lineOffset=beforeLines.length-1;
+    const col=lineOffset===0?start.column+before.length:beforeLines[beforeLines.length-1].length+1;
+    editor.setPosition({lineNumber:start.lineNumber+lineOffset,column:col});
+  }
+  editor.focus();
+}
+function qtMoveCursor(dir){
+  if(!editor)return;
+  const p=editor.getPosition();if(!p)return;
+  editor.setPosition({lineNumber:p.lineNumber,column:Math.max(1,p.column+dir)});
+  editor.focus();
+}
+const CP_COLORS=['#000000','#ffffff','#e55454','#f0ad4e','#f5d76e','#2fbf71','#3ba9e0','#5c6bc0','#8a5cf6','#e5604f','#9a9aa4','#4a4a55','#d6d6dc','#6c6c76','#26262b','#1a1a1d'];
+function toggleColorPicker(e){
+  const cp=$('#color-picker');
+  if(cp.classList.contains('show')){closeColorPicker();return;}
+  cp.innerHTML='<div class="cp-grid">'+CP_COLORS.map(c=>`<div class="cp-swatch" style="background:${c}" onclick="pickColor('${c}')" title="${c}"></div>`).join('')+
+    '</div><div class="cp-hexrow"><input id="cp-hex" placeholder="#3ba9e0" maxlength="9"><button onclick="pickColor(document.getElementById(\'cp-hex\').value)">Sisip</button></div>';
+  cp.classList.add('show');
+  const r=e.currentTarget.getBoundingClientRect();
+  const w=216;
+  cp.style.left=Math.min(r.left,innerWidth-w-10)+'px';
+  cp.style.top=(r.bottom+8)+'px';
+}
+function closeColorPicker(){$('#color-picker').classList.remove('show');}
+function pickColor(hex){
+  if(!hex)return;
+  if(!hex.startsWith('#'))hex='#'+hex;
+  $('#qt-swatch-dot').style.background=hex;
+  qtInsert(hex);
+  closeColorPicker();
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#color-picker')&&!e.target.closest('.qt-color'))closeColorPicker();
+});
+
 function renderBreadcrumbs(){
   const bc=$('#breadcrumbs');
   if(!activePath){bc.innerHTML='';bc.style.display='none';return;}
@@ -839,7 +940,7 @@ function renderTabs(){
     d.onclick=e=>{if(e.target.closest('.x'))closeTab(p);else openFile(p);};
     wrap.appendChild(d);
   });
-  renderBreadcrumbs();
+  renderBreadcrumbs();renderQuickTools();
   $('#sb-lang').textContent=activePath?({javascript:'JavaScript',typescript:'TypeScript',html:'HTML',css:'CSS',json:'JSON',markdown:'Markdown',python:'Python',plaintext:'Plain Text'}[langOf(activePath)]||langOf(activePath)):'—';
 }
 
@@ -942,13 +1043,13 @@ function doCommit(){
 
 /* ---------- Extensions ---------- */
 const EXTS=[
-  ['Pr','Prettier','Formatter kode otomatis untuk semua bahasa','#8a8a94'],
-  ['ES','ESLint','Deteksi error & style pada JavaScript','#6c6c76'],
-  ['LS','Live Preview','Reload otomatis saat menyimpan berkas','#9a9aa4'],
-  ['TK','Theme Kit','Paket tema ikon & warna tambahan','#5e5e68'],
-  ['GM','GitLens','Sejarah & blame per baris kode','#a8a8b2'],
+  ['Pr','Prettier','Formatter kode otomatis untuk semua bahasa','#f0ad4e'],
+  ['ES','ESLint','Deteksi error & style pada JavaScript','#8a5cf6'],
+  ['LS','Live Preview','Reload otomatis saat menyimpan berkas','#3ba9e0'],
+  ['TK','Theme Kit','Paket tema ikon & warna tambahan','#2fbf71'],
+  ['GM','GitLens','Sejarah & blame per baris kode','#e5604f'],
 ];
-$('#p-ext').innerHTML=EXTS.map(e=>`<div class="ext-card"><div class="ext-ic" style="background:${e[3]}">${e[0]}</div><div><div class="ext-nm">${e[1]}</div><div class="ext-ds">${e[2]}</div><span class="ext-chip">✓ Terpasang</span></div></div>`).join('');
+$('#p-ext').innerHTML=EXTS.map(e=>`<div class="ext-card"><div class="ext-ic" style="color:${e[3]}">${e[0]}</div><div><div class="ext-nm">${e[1]}</div><div class="ext-ds">${e[2]}</div><span class="ext-chip">✓ Terpasang</span></div></div>`).join('');
 
 /* ---------- Terminal ---------- */
 function termPrint(text,cls){
