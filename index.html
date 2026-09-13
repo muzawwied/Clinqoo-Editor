@@ -581,6 +581,7 @@ body.light #statusbar{background:#131316}
   </div>
   <div class="sb" onclick="toggleBottom()">⚠ <span id="sb-warn">0</span> ✕ <span id="sb-err">0</span></div>
   <div class="spacer"></div>
+  <div class="sb" id="sb-cloud" style="display:none" onclick="linkedCloudPush();toast('Sinkron cloud dipicu')"></div>
   <div class="sb" id="sb-cursor" onclick="toast('Gunakan Ctrl+G untuk pergi ke baris')">Ln 1, Col 1</div>
   <div class="sb" id="sb-indent" onclick="cycleIndent()">Spasi: 2</div>
   <div class="sb" id="sb-enc">UTF-8</div>
@@ -832,7 +833,67 @@ Tekan **Ctrl+P** untuk membuka berkas, atau **F5** untuk menjalankan pratinjau.
 };
 
 let project, savedSnap;
+/* ===== Mode tersambung: sinkronisasi dua arah dengan proyek Clincoo ===== */
+/* Editor (github.io) berbagi localStorage dengan Clincoo (github.io) —  */
+/* struktur berkas Clincoo (folder->[item]) dikonversi ke berkas rata.   */
+const _QP=new URLSearchParams(location.search);
+const LINK_PID=_QP.get('pid')||'';
+const LINK_NAME=_QP.get('name')||'Proyek';
+const WS_API='https://clincoo-be2.pages.dev/api/project-files';
+let linkedEmptyFolders=[],cloudTimer=null,cloudOk=null;
+function wsFilesKey(){return 'clincoo_workspace_files_'+LINK_PID;}
+function ccAuthHeaders(){const t=localStorage.getItem('clincoo_auth_token')||localStorage.getItem('clincoo_token')||'';return t?{'Authorization':'Bearer '+t}:{};}
+function ccSizeLabel(c){const kb=(c||'').length/1024;return kb>=1024?(kb/1024).toFixed(1)+' MB':kb.toFixed(1)+' KB';}
+function wsToFlat(data){
+  const files={},emptyFolders=[];
+  Object.keys(data||{}).forEach(fk=>{
+    (data[fk]||[]).forEach(it=>{
+      if(!it||!it.path)return;
+      if(it.type==='file')files[it.path]=it.content||'';
+      else if(it.type==='folder'){
+        const hasKids=Object.keys(data).some(k=>k===it.path||k.startsWith(it.path+'/'));
+        if(!hasKids)emptyFolders.push(it.path);
+      }
+    });
+  });
+  return{files,emptyFolders};
+}
+function flatToWs(){
+  const data={'root':[]};
+  const ensureChain=fk=>{
+    if(fk==='root')return;
+    const parts=fk.split('/').filter(Boolean);
+    let parent='root',cum='';
+    parts.forEach(pt=>{
+      cum=cum?cum+'/'+pt:pt;
+      if(!Array.isArray(data[parent]))data[parent]=[];
+      if(!data[parent].some(i=>i&&i.type==='folder'&&i.name.toLowerCase()===pt.toLowerCase()))
+        data[parent].push({type:'folder',name:pt,path:cum,fileCount:0,previewText:'Folder'});
+      if(!Array.isArray(data[cum]))data[cum]=[];
+      parent=cum;
+    });
+  };
+  Object.keys(project).sort().forEach(p=>{
+    const parts=p.split('/');const nm=parts.pop();
+    if(!nm)return;
+    const fk=parts.length?parts.join('/'):'root';
+    ensureChain(fk);
+    if(!Array.isArray(data[fk]))data[fk]=[];
+    if(!data[fk].some(i=>i.path===p))
+      data[fk].push({type:'file',name:nm,path:p,content:project[p],size:ccSizeLabel(project[p]),previewText:(project[p]||'').slice(0,60)});
+  });
+  linkedEmptyFolders.forEach(fp=>ensureChain(fp));
+  return data;
+}
 function loadProject(){
+  if(LINK_PID){ // proyek Clincoo: berkas apa adanya (kosong ya kosong)
+    try{
+      const raw=localStorage.getItem(wsFilesKey());
+      if(raw){const d=JSON.parse(raw);const r=wsToFlat(d);linkedEmptyFolders=r.emptyFolders;return r.files;}
+    }catch(e){}
+    linkedEmptyFolders=[];
+    return {};
+  }
   try{
     const raw=localStorage.getItem('clincoo_editor_project');
     if(raw){const p=JSON.parse(raw); if(p&&p['index.html']!==undefined) return p;}
@@ -841,8 +902,75 @@ function loadProject(){
 }
 function persist(){
   try{localStorage.setItem('clincoo_editor_project',JSON.stringify(project));}catch(e){}
+  if(LINK_PID){
+    try{localStorage.setItem(wsFilesKey(),JSON.stringify(flatToWs()));}catch(e){}
+    linkedCloudPushSchedule();
+  }
   updateGit();
 }
+function linkedCloudPushSchedule(){
+  if(!LINK_PID)return;
+  clearTimeout(cloudTimer);
+  cloudTimer=setTimeout(linkedCloudPush,2500);
+}
+function linkedCloudPush(){
+  cloudTimer=null;
+  if(!LINK_PID)return;
+  const files=[];
+  Object.keys(project).forEach(p=>files.push({path:p,content:project[p]}));
+  linkedEmptyFolders.forEach(f=>files.push({path:f+'/',content:''}));
+  const H=Object.assign({'Content-Type':'application/json'},ccAuthHeaders());
+  fetch(WS_API+'?project_id='+encodeURIComponent(LINK_PID),{method:'DELETE',headers:H})
+    .then(r=>r.ok?fetch(WS_API,{method:'POST',headers:H,body:JSON.stringify({project_id:LINK_PID,files})}):Promise.reject())
+    .then(()=>setCloudDot(true))
+    .catch(()=>setCloudDot(false));
+}
+function linkedCloudPull(){
+  if(!LINK_PID)return;
+  if(Object.keys(project).length)return; // hanya bila lokal kosong
+  fetch(WS_API+'?project_id='+encodeURIComponent(LINK_PID),{headers:ccAuthHeaders()})
+    .then(r=>r.ok?r.json():Promise.reject())
+    .then(d=>{
+      const files=(d&&d.files)||[];
+      if(!files.length)return;
+      files.forEach(f=>{
+        if(String(f.path).slice(-1)==='/'){linkedEmptyFolders.push(String(f.path).slice(0,-1));return;}
+        project[f.path]=f.content||'';
+      });
+      try{localStorage.setItem(wsFilesKey(),JSON.stringify(flatToWs()));}catch(e){}
+      renderAll();openDefaultTabs();
+      toast('Berkas proyek ditarik dari cloud ✦ '+files.length+' berkas');
+    }).catch(()=>{});
+}
+function setCloudDot(ok){
+  cloudOk=ok;
+  const el=$('#sb-cloud');
+  if(!el)return;
+  if(!LINK_PID){el.style.display='none';return;}
+  el.style.display='inline-flex';
+  el.innerHTML=ok?'<b style=\"color:#2fbf71\">☁</b> '+LINK_NAME:'<b style=\"color:#e5604f\">☁</b> '+LINK_NAME+' (offline)';
+  el.title=ok?'Tersinkron cloud Clincoo — klik untuk sinkron sekarang':'Belum tersinkron — klik untuk coba lagi';
+}
+// Sinkronisasi dua arah real-time: perubahan dari Clincoo di tab lain masuk ke editor
+window.addEventListener('storage',e=>{
+  if(!LINK_PID||e.key!==wsFilesKey()||!e.newValue)return;
+  try{
+    const r=wsToFlat(JSON.parse(e.newValue));
+    let changed=false;
+    Object.keys(project).forEach(p=>{ if(!(p in r.files)){delete project[p];if(models[p]){models[p].dispose();delete models[p];}if(tabs.includes(p))closeTab(p);changed=true;} });
+    r.files.forEach!==undefined&&Object.keys(r.files).forEach(p=>{
+      if(project[p]===undefined||project[p]!==r.files[p]){
+        const dirtyNow=models[p]&&models[p].getValue()!==project[p];
+        project[p]=r.files[p];
+        if(models[p]&&!dirtyNow)models[p].setValue(r.files[p]);
+        else if(models[p]&&dirtyNow){/* jangan timpil editor yang sedang diedit */}
+        changed=true;
+      }
+    });
+    linkedEmptyFolders=r.emptyFolders;
+    if(changed){renderAll();if(activePath&&models[activePath])editor.setModel(models[activePath]);}
+  }catch(err){}
+});
 
 let editor=null, models={}, tabs=[], activePath=null, bottomOpen=true, sbOpen=true, zenMode=false;
 
@@ -899,7 +1027,7 @@ require(['vs/editor/editor.main'],function(){
 function modelFor(path){
   if(!models[path]){
     models[path]=monaco.editor.createModel(project[path]||'',langOf(path),monaco.Uri.parse('inmemory:/'+path));
-    models[path].onDidChangeContent(()=>{renderTabs();updateGit();phRefresh();});
+    models[path].onDidChangeContent(()=>{renderTabs();updateGit();if(livePreviewOn)phRefresh();});
   }
   return models[path];
 }
@@ -916,9 +1044,10 @@ function openFile(path,focus=true){
   if(focus){editor.focus();closeMobileSidebar();}
 }
 function openDefaultTabs(){
-  openFile('index.html',false);
-  openFile('app.js',false);
-  openFile('style.css',false);
+  const keys=Object.keys(project);
+  if(!keys.length){$('#welcome').classList.add('show');return;}
+  ['index.html','app.js','style.css'].forEach(f=>{if(f in project)openFile(f,false);});
+  if(!tabs.length)openFile(keys[0],false);
 }
 function closeTab(path){
   const i=tabs.indexOf(path); if(i<0)return;
@@ -938,6 +1067,13 @@ function dirtySet(){
 }
 function saveActive(){
   if(!activePath)return toast('Tidak ada berkas aktif');
+  if(localStorage.getItem('cc_fmt')==='on'&&editor){
+    const a=editor.getAction('editor.action.formatDocument');
+    if(a&&a.run){a.run().then(_saveActiveNow).catch(_saveActiveNow);return;}
+  }
+  _saveActiveNow();
+}
+function _saveActiveNow(){
   project[activePath]=models[activePath].getValue();
   persist();renderTabs();renderTree();
   toast('Tersimpan: '+nameOf(activePath));
@@ -999,7 +1135,7 @@ function renderTree(){
   const rootWrap=document.createElement('div');
   rootWrap.className='tree-item';
   rootWrap.style.fontWeight='700';
-  rootWrap.innerHTML=`<span class="tw open"></span><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="nm">proyek-clincoo</span>`;
+  rootWrap.innerHTML=`<span class="tw open"></span><svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="nm">${esc(LINK_PID?LINK_NAME:'proyek-clincoo')}</span>`;
   t.appendChild(rootWrap);
   build(treeData(),0,t,'');
   if(!Object.keys(project).length)t.innerHTML='<div class="empty-note">Proyek kosong.<br>Buat berkas baru dengan tombol ＋</div>';
@@ -1107,28 +1243,68 @@ function updateGit(){
 function renderGitList(){
   const dirty=dirtySet();
   const el=$('#git-list');
-  if(!dirty.size){el.innerHTML='<div class="empty-note">Tidak ada perubahan.<br>Semua berkas tersimpan. ✨</div>';return;}
-  el.innerHTML=[...dirty].map(p=>`<div class="tree-item" onclick="openFile('${esc(p)}')"><span class="badge M">M</span><span class="nm">${esc(nameOf(p))}</span></div>`).join('');
+  let html='';
+  if(dirty.size){
+    html+='<div class="empty-note" style="opacity:.75">Perubahan belum tersimpan versi:</div>';
+    html+=[...dirty].map(p=>`<div class="tree-item" onclick="openFile('${esc(p)}')"><span class="badge M">M</span><span class="nm">${esc(nameOf(p))}</span></div>`).join('');
+  }else{
+    html+='<div class="empty-note">Tidak ada perubahan.<br>Semua berkas tersimpan. ✨</div>';
+  }
+  const hist=getCommits();
+  if(hist.length){
+    html+='<div class="empty-note" style="opacity:.75;margin-top:8px">Riwayat versi (tersimpan lokal):</div>';
+    html+=hist.map(c=>`<div class="tree-item" onclick="checkoutCommit('${c.id}')" title="Klik untuk memulihkan versi ini"><span class="tw" style="color:var(--accent)">●</span><span class="nm">${esc(c.msg)}</span><span class="badge" style="opacity:.7">${c.n}f</span></div>`).join('');
+  }
+  el.innerHTML=html;
 }
+function commitsKey(){return 'cc_commits_'+(LINK_PID||'local');}
+function getCommits(){try{return JSON.parse(localStorage.getItem(commitsKey())||'[]');}catch(e){return[];}}
+function setCommits(c){try{localStorage.setItem(commitsKey(),JSON.stringify(c.slice(0,40)));}catch(e){}}
 function doCommit(){
   const dirty=dirtySet();
   const msg=$('#git-msg').value.trim()||'Update berkas';
   if(!dirty.size){toast('Tidak ada yang di-commit');return;}
   saveAll();
+  const c={id:Math.random().toString(16).slice(2,9),msg,date:new Date().toISOString(),n:dirty.size,files:JSON.parse(JSON.stringify(project)),folders:linkedEmptyFolders.slice()};
+  const hist=getCommits();hist.unshift(c);setCommits(hist);
   $('#git-msg').value='';
-  termPrint(['','[main '+Math.random().toString(16).slice(2,9)+'] '+msg,' '+[...dirty].map(p=>' 1 file changed — '+nameOf(p)).join('\n'),''].join('\n'),'ok');
-  toast('Commit berhasil: '+dirty.size+' berkas');
+  renderGitList();
+  termPrint(['','[main '+c.id+'] '+msg,' '+[...dirty].map(p=>' 1 file changed — '+nameOf(p)).join('\n'),''].join('\n'),'ok');
+  toast('Versi tersimpan: '+dirty.size+' berkas');
+}
+function checkoutCommit(id){
+  const c=getCommits().find(x=>x.id===id);
+  if(!c){toast('Versi tidak ditemukan');return;}
+  saveAll(); // amankan kondisi sekarang dulu
+  project=JSON.parse(JSON.stringify(c.files));
+  linkedEmptyFolders=c.folders||[];
+  Object.keys(models).forEach(p=>{models[p].dispose();delete models[p];});
+  tabs=[];activePath=null;
+  persist();openDefaultTabs();renderAll();
+  toast('Dipulihkan ke versi: '+c.msg);
 }
 
-/* ---------- Extensions ---------- */
+/* ---------- Extensions (klik = benar-benar mengubah perilaku editor) ---------- */
+let livePreviewOn=localStorage.getItem('cc_live')!=='off';
 const EXTS=[
-  ['Pr','Prettier','Formatter kode otomatis untuk semua bahasa','#f0ad4e'],
-  ['ES','ESLint','Deteksi error & style pada JavaScript','#8a5cf6'],
-  ['LS','Live Preview','Reload otomatis saat menyimpan berkas','#3ba9e0'],
-  ['TK','Theme Kit','Paket tema ikon & warna tambahan','#2fbf71'],
-  ['GM','GitLens','Sejarah & blame per baris kode','#e5604f'],
+ {ic:'Pr',nm:'Prettier',ds:'Format otomatis saat menyimpan berkas (Ctrl+S)',c:'#f0ad4e',
+  on:()=>localStorage.getItem('cc_fmt')==='on',
+  act:()=>{const on=localStorage.getItem('cc_fmt')==='on';localStorage.setItem('cc_fmt',on?'off':'on');renderExt();toast('Format saat simpan: '+(on?'Mati':'Aktif'));}},
+ {ic:'ES',nm:'ESLint',ds:'Deteksi error & gaya kode langsung di editor',c:'#8a5cf6',
+  on:()=>true,act:()=>{if(!bottomOpen)toggleBottom();$$('.bt-tab[data-bt="prob"]').forEach(b=>b.click());toast('Klik baris masalah untuk menuju lokasinya');}},
+ {ic:'LP',nm:'Live Preview',ds:'Pratinjau menyegar otomatis saat mengedit',c:'#3ba9e0',
+  on:()=>localStorage.getItem('cc_live')!=='off',
+  act:()=>{const on=localStorage.getItem('cc_live')!=='off';localStorage.setItem('cc_live',on?'off':'on');livePreviewOn=!on;renderExt();toast('Live preview: '+(on?'Mati':'Aktif'));}},
+ {ic:'TK',nm:'Theme Kit',ds:'Ganti tema editor terang/gelap',c:'#2fbf71',
+  on:()=>document.body.classList.contains('light'),act:()=>{toggleTheme();renderExt();}},
+ {ic:'GL',nm:'GitLens',ds:'Riwayat versi & pulihkan berkas lama',c:'#e5604f',
+  on:()=>getCommits().length>0,act:()=>{showPanel('git');toast('Klik versi di riwayat untuk memulihkannya');}},
 ];
-$('#p-ext').innerHTML=EXTS.map(e=>`<div class="ext-card"><div class="ext-ic" style="color:${e[3]}">${e[0]}</div><div><div class="ext-nm">${e[1]}</div><div class="ext-ds">${e[2]}</div><span class="ext-chip">✓ Terpasang</span></div></div>`).join('');
+function renderExt(){
+  $('#p-ext').innerHTML=EXTS.map(e=>`<div class="ext-card" onclick="extRun('${e.nm.toLowerCase().replace(/ /g,'')}')" style="cursor:pointer"><div class="ext-ic" style="color:${e.c}">${e.ic}</div><div><div class="ext-nm">${e.nm}</div><div class="ext-ds">${e.ds}</div><span class="ext-chip" style="${e.on()?'':'background:var(--bg4);color:var(--text3)'}">${e.on()?'✓ Aktif':'○ Klik untuk aktifkan'}</span></div></div>`).join('');
+}
+function extRun(id){const e=EXTS.find(x=>x.nm.toLowerCase().replace(/ /g,'')===id);if(e)e.act();}
+renderExt();
 
 /* ---------- Terminal ---------- */
 function termPrint(text,cls){
@@ -1140,30 +1316,61 @@ function termPrint(text,cls){
   out.scrollTop=out.scrollHeight;
 }
 const CMDS={
-  help(){return ['Perintah tersedia:','  help          — panduan ini','  ls            — daftar berkas','  cat <berkas>  — tampilkan isi berkas','  open <berkas> — buka di editor','  touch <nama>  — buat berkas baru','  rm <berkas>    — hapus berkas','  clear         — bersihkan terminal','  date          — tanggal & waktu','  whoami        — siapa kamu','  git status    — status perubahan','  git log       — riwayat commit (fun)','  npm run dev   — jalankan dev server (fun)','  neofetch      — info sistem'].join('\n');},
-  ls(){return Object.keys(project).sort().map(p=>(p.includes('/')?'  ':'')+nameOf(p)+'  ('+((project[p].length/1024).toFixed(1))+' KB)').join('\n');},
-  cat(a){const f=a[0];if(!f)return 'Penggunaan: cat <berkas>';if(project[f]===undefined)return 'cat: '+f+': tidak ada';return project[f].slice(0,3000);},
+  help(){return ['Perintah tersedia (dieksekusi NYATA pada proyek ini):','  help            — panduan ini','  ls / tree       — daftar / struktur berkas','  cd / pwd        — pindah & lihat folder kerja','  cat <berkas>    — tampilkan isi berkas','  open <berkas>   — buka di editor','  touch <nama>    — buat berkas baru','  mkdir <nama>    — buat folder','  rm <berkas>     — hapus berkas','  mv <a> <b>      — pindah/ganti nama','  cp <a> <b>      — salin berkas','  echo teks > f   — tulis teks ke berkas','  find <kata>     — cari berkas & isi','  stat <berkas>   — ukuran & tanggal','  save            — simpan semua berkas','  clear           — bersihkan terminal','  date            — tanggal & waktu real','  whoami          — siapa kamu','  git status      — status perubahan (nyata)','  git log         — riwayat versi (nyata)','  git commit -m <pesan> — simpan versi (nyata)','  git checkout <id> — pulihkan versi','  git push        — kirim ke cloud Clincoo','  npm run dev     — jalankan pratinjau (nyata)','  npm run build   — unduh HTML jadi satu berkas','  neofetch        — info sistem'].join('\n');},
+  tree(){const t=treeData();let out=LINK_PID?LINK_NAME:'proyek-clincoo';const walk=(node,pre)=>{const ds=Object.keys(node.dirs).sort(),fs=node.files.sort((a,b)=>nameOf(a).localeCompare(nameOf(b)));ds.forEach((d,i)=>{const last=i===ds.length-1&&!fs.length;out+='\n'+pre+(last?'└─ ':'├─ ')+d+'/';walk(node.dirs[d],pre+(last?'   ':'│  '));});fs.forEach((f,i)=>{out+='\n'+pre+(i===fs.length-1?'└─ ':'├─ ')+nameOf(f);});};walk(t,'');return out;},
+  cd(a){const target=(a[0]||'').replace(/\/$/,'');if(!target||target==='/'){termCwd='';return 'OK — root';}const ok=Object.keys(project).some(p=>p===target||p.startsWith(target+'/')||linkedEmptyFolders.some(f=>f===target||f.startsWith(target+'/')));if(!ok)return 'cd: '+target+': folder tidak ada';termCwd=target;return 'OK — '+target;},
+  pwd(){return '/'+termCwd;},
+  ls(){let keys=Object.keys(project).sort();if(termCwd)keys=keys.filter(p=>p===termCwd||p.startsWith(termCwd+'/'));const dirs=new Set();let out='';keys.forEach(p=>{const rel=termCwd?p.slice(termCwd.length+1):p;const slash=rel.indexOf('/');if(slash>0){dirs.add(rel.slice(0,slash)+'/');return;}out+=rel+'  ('+((project[p].length/1024).toFixed(1))+' KB)\n';});return [...dirs].sort().join('\n')+(dirs.size?'\n':'')+out.trim();},
+  cat(a){const f=(termCwd&&!a[0].includes('/')?termCwd+'/':'')+a[0];if(!a[0])return 'Penggunaan: cat <berkas>';if(project[f]===undefined)return 'cat: '+f+': tidak ada';return project[f].slice(0,3000);},
   open(a){const f=a[0];if(project[f]!==undefined){openFile(f);return 'Membuka '+f+'…';}return 'open: '+f+': tidak ada';},
   touch(a){const f=a.join(' ');if(!f)return 'Penggunaan: touch <nama.ekstensi>';project[f]='';persist();renderTree();return 'Dibuat: '+f;},
+  mkdir(a){const f=a.join(' ').replace(/\/+$/,'');if(!f)return 'Pengunaan: mkdir <nama-folder>';if(!linkedEmptyFolders.includes(f))linkedEmptyFolders.push(f);persist();renderTree();return 'Folder dibuat: '+f;},
   rm(a){const f=a[0];if(project[f]===undefined)return 'rm: '+f+': tidak ada';if(models[f])models[f].dispose(),delete models[f];delete project[f];if(tabs.includes(f))closeTab(f);persist();renderTree();return 'Terhapus: '+f;},
+  mv(a){const f=a[0],t=a[1];if(!f||!t)return 'Penggunaan: mv <dari> <ke>';if(project[f]===undefined)return 'mv: '+f+': tidak ada';project[t]=project[f];delete project[f];if(models[f]){models[f].dispose();delete models[f];}if(tabs.includes(f)){tabs[tabs.indexOf(f)]=t;}if(activePath===f)activePath=t;persist();renderTree();renderTabs();return f+' -> '+t;},
+  cp(a){const f=a[0],t=a[1];if(!f||!t)return 'Penggunaan: cp <dari> <ke>';if(project[f]===undefined)return 'cp: '+f+': tidak ada';project[t]=project[f];persist();renderTree();return 'Tersalin: '+t;},
+  echo(a,line){const m=line.match(/^echo\s+(.*?)\s*>\s*(\S+)$/);if(m){project[m[2]]=m[1]+'\n';persist();renderTree();return 'Ditulis ke '+m[2];}return line.replace(/^echo\s+/,'');},
+  find(a){const q=a.join(' ').toLowerCase();if(!q)return 'Penggunaan: find <kata>';const hits=[];Object.keys(project).forEach(p=>{if(p.toLowerCase().includes(q))hits.push(p);else{const i=project[p].toLowerCase().indexOf(q);if(i!==-1)hits.push(p+': …'+project[p].slice(Math.max(0,i-20),i+30).replace(/\n/g,'␤')+'…');}});return hits.length?hits.slice(0,30).join('\n'):'Tidak ada hasil untuk "'+q+'"';},
+  stat(a){const f=a[0];if(project[f]===undefined)return 'stat: '+f+': tidak ada';const c=project[f];return ['Berkas : '+f,'Ukuran: '+c.length+' byte ('+ccSizeLabel(c)+')','Baris : '+c.split('\n').length,'Karakter: '+c.length].join('\n');},
+  save(){saveAll();return 'Semua berkas tersimpan'+(LINK_PID?' & tersinkron ke Clincoo':'')+'.';},
   clear(){$('#term-out').innerHTML='';return '';},
   date(){return new Date().toString();},
   whoami(){return 'clincoo — developer keren 💙';},
-  git(a){const s=a[1];
-    if(s==='status'){const d=dirtySet();return d.size?'Perubahan belum di-commit:\n'+[...d].map(p=>'  modified: '+p).join('\n')+'\n\nGunakan panel Kontrol Sumber untuk commit.':'di cabang main\ntidak ada perubahan, pohon kerja bersih ✨';}
-    if(s==='log')return '[main 9f2a1bc] init: Clincoo Code v1.0\n[main 4d0c889] feat: editor dasar\n[main b3e77aa] chore: setup proyek';
-    return 'git: perintah tidak dikenali. Coba: git status / git log';},
-  npm(a){if((a[0]==='run')&&(a[1]==='dev')){setTimeout(()=>termPrint('  ➜ Local: http://localhost:3000 — siap dalam 0.2s ✨','ok'),300);return '> proyek-clincoo@1.0.0 dev\n> clincoo serve';}return 'npm: coba "npm run dev"';},
-  neofetch(){return ['      ┌─┐        clincoo@code','      │ │        ─────────────','   ┌──┘ │  OS    : Clincoo Code 1.0','   │  ● │  Shell  : csh 1.0','   └──┐ │  Editor: Monaco Engine','      │ │  Tema  : '+(document.body.classList.contains('light')?'Terang':'Gelap'),'      └─┘  Bahasa: JS/TS/HTML/CSS + 21 lainnya'].join('\n');}
+  git(a,line){const s=a[0];
+    if(s==='status'){const d=dirtySet();return d.size?'Perubahan belum di-commit:\n'+[...d].map(p=>'  modified: '+p).join('\n')+'\n\nKetik: git commit -m <pesan>':'di cabang main\ntidak ada perubahan, pohon kerja bersih ✨';}
+    if(s==='commit'){const m=line.match(/-m\s+["\']?(.+?)["\']?$/);if(!m)return 'Penggunaan: git commit -m "pesan"';$('#git-msg').value=m[1];doCommit();return '';}
+    if(s==='log'){const h=getCommits();if(!h.length)return 'Belum ada versi tersimpan.\nKetik: git commit -m "pesan"';return h.map(c=>'['+new Date(c.date).toLocaleString('id-ID')+'] [main '+c.id+'] '+c.msg+' ('+c.n+' berkas)').join('\n');}
+    if(s==='checkout'){const id=a[1];if(!id)return 'Penggunaan: git checkout <id> — lihat id di git log';if(!getCommits().some(c=>c.id===id))return 'checkout: '+id+': versi tidak ada';checkoutCommit(id);return 'Dipulihkan ke versi '+id;}
+    if(s==='push'){if(!LINK_PID)return 'git push: hanya berlaku saat editor dibuka dari proyek Clincoo.';linkedCloudPush();return 'Mengirim '+Object.keys(project).length+' berkas ke cloud Clincoo…';}
+    return 'git: perintah tidak dikenali. Coba: status / log / commit -m / checkout / push';},
+  npm(a){if((a[0]==='run')&&(a[1]==='dev')){setTimeout(()=>{runPreview();termPrint('  ➜ Pratinjau live berjalan — berkas proyek nyata, bukan simulasi ✨','ok');},250);return '> proyek-clincoo@1.0.0 dev\n> clincoo serve';}
+    if((a[0]==='run')&&(a[1]==='build')){setTimeout(()=>{const out=buildBundle();if(out){downloadFile(LINK_PID?LINK_NAME:'proyek-clincoo',out);termPrint('  ➜ Build selesai — HTML gabungan diunduh ('+out.length+' byte) ✨','ok');}},250);return '> proyek-clincoo@1.0.0 build\n> clincoo build (menggabungkan HTML/CSS/JS menjadi satu berkas)';}
+    return 'npm: coba "npm run dev" (pratinjau) atau "npm run build" (unduh HTML)';},
+  neofetch(){return ['      ┌─┐        clincoo@code','      │ │        ─────────────','   ┌──┘ │  OS    : Clincoo Code 1.0','   │  ● │  Shell  : csh 2.0 (real-time)','   └──┐ │  Editor: Monaco Engine','      │ │  Proyek: '+(LINK_PID?LINK_NAME+' (tersinkron Clincoo)':'lokal'),'      └─┘  Berkas: '+Object.keys(project).length+' berkas'].join('\n');}
 };
+let termCwd='';
+function buildBundle(){
+  let html=project['index.html']||project['index.htm'];
+  if(!html){const first=Object.keys(project).find(p=>p.endsWith('.html'));if(!first){toast('Tidak ada index.html untuk dibuild');return null;}html=project[first];}
+  const css=Object.keys(project).filter(p=>p.endsWith('.css')).map(p=>'\n/* '+p+' */\n'+project[p]).join('');
+  const js=Object.keys(project).filter(p=>p.endsWith('.js')).map(p=>'\n/* '+p+' */\n'+project[p]).join('');
+  if(css&&!/<\/head>/i.test(html))html+='\n<style>'+css+'\n</style>';else if(css)html=html.replace(/<\/head>/i,'<style>'+css.replace(/\$\$/g,'$$$$')+'\n</style>\n</head>');
+  if(js&&!/<\/body>/i.test(html))html+='\n<script>'+js+'\n<\/script>';else if(js)html=html.replace(/<\/body>/i,'<script>'+js.replace(/\$\$/g,'$$$$')+'\n<\/script>\n</body>');
+  return html;
+}
+function downloadFile(name,content){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([content],{type:'text/html'}));
+  a.download=(name||'proyek')+'.html';
+  document.body.appendChild(a);a.click();a.remove();
+}
 function termRun(raw){
   toggleBottomIfClosed();
   const line=raw.trim();
   if(!line)return;
-  termPrint('clincoo@code:~/project$ '+line,'cmd');
+  termPrint('clincoo@code:~/'+(termCwd||'project')+'$ '+line,'cmd');
   const [c,...args]=line.split(/\s+/);
   let out='';
-  if(CMDS[c])out=CMDS[c](args);
+  if(CMDS[c])out=CMDS[c](args,line);
   else out='csh: perintah tidak ditemukan: '+c+'\nKetik "help" untuk daftar perintah.';
   if(out)termPrint(out);
 }
@@ -1605,6 +1812,12 @@ else if(localStorage.getItem('cc_sb_open')==='0'){
   sbOpen=false;$('#sidebar').classList.add('hidden');$('#sb-resize').classList.add('hidden');$('#sb-reopen').classList.add('show');
 }
 project=loadProject();
+if(LINK_PID){
+  document.title=LINK_NAME+' — Clincoo Code';
+  setCloudDot(false);
+  linkedCloudPull();
+  window.addEventListener('beforeunload',()=>{clearTimeout(cloudTimer);linkedCloudPush();});
+}
 if(localStorage.getItem('cc_theme')==='light')document.body.classList.add('light');
 $('#sb-indent').textContent='Spasi: '+(localStorage.getItem('cc_tab')||'2');
 outPrint('<b>Clincoo Code</b> siap digunakan.');
