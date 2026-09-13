@@ -1631,7 +1631,22 @@ function outPrint(msg){
 
 /* ---------- Preview ---------- */
 function liveVal(p){const m=models[p];return (m&&m.getValue)?m.getValue():(project[p]!==undefined?project[p]:undefined);}
+// Cari berkas lokal yang cocok dengan sebuah href/src relatif, walau proyek
+// menyimpannya di dalam folder (css/style.css, ./assets/app.js, /js/app.js, dst).
+// Urutan pencocokan: path persis → tanpa "./" atau "/" di depan → tanpa query/hash → nama berkas saja.
+function resolveLocalAsset(ref, liveAll){
+  if(/^(https?:)?\/\//i.test(ref)||ref.startsWith('data:'))return null; // aset eksternal, jangan disentuh
+  const bare=ref.split(/[?#]/)[0];
+  const norm=bare.replace(/^\.\//,'').replace(/^\/+/,'');
+  const candidates=[ref,bare,norm];
+  for(const c of candidates){if(liveAll[c]!==undefined)return c;}
+  const base=nameOf(norm);
+  const hit=Object.keys(liveAll).find(p=>nameOf(p)===base);
+  return hit!==undefined?hit:null;
+}
+let previewMissing=[];
 function buildPreview(){
+  previewMissing=[];
   let html=liveVal('index.html');
   if(html===undefined){
     const firstHtml=Object.keys(project).find(p=>p.endsWith('.html'));
@@ -1640,13 +1655,27 @@ function buildPreview(){
   }
   const liveAll={};Object.keys(project).forEach(p=>liveAll[p]=liveVal(p));
   html=html.replace(/<link[^>]*href=["']([^"']+\.css)["'][^>]*>/gi,(m,href)=>{
-    const f=liveAll[href]!==undefined?href:Object.keys(project).find(p=>nameOf(p)===href);
-    return f&&liveAll[f]!==undefined?'<style>'+liveAll[f]+'</style>':m;
+    if(/^(https?:)?\/\//i.test(href))return m; // stylesheet eksternal (mis. Google Fonts) — biarkan, akan diambil via jaringan
+    const f=resolveLocalAsset(href,liveAll);
+    if(f===null){previewMissing.push(href);return m;}
+    return '<style>'+liveAll[f]+'</style>';
   });
   html=html.replace(/<script[^>]*src=["']([^"']+\.(?:js|mjs))["'][^>]*><\/script>/gi,(m,src)=>{
-    const f=liveAll[src]!==undefined?src:Object.keys(project).find(p=>nameOf(p)===src);
-    return f&&liveAll[f]!==undefined?'<script>'+liveAll[f].replace(/<\/script>/gi,'<\\/script>')+'<\/script>':m;
+    if(/^(https?:)?\/\//i.test(src))return m;
+    const f=resolveLocalAsset(src,liveAll);
+    if(f===null){previewMissing.push(src);return m;}
+    return '<script>'+liveAll[f].replace(/<\/script>/gi,'<\\/script>')+'<\/script>';
   });
+  // Ganti src gambar lokal yang tersimpan sebagai dataURL hasil import, supaya ikut tampil di pratinjau
+  html=html.replace(/(<img[^>]*\bsrc=["'])([^"']+)(["'])/gi,(m,pre,src,post)=>{
+    if(/^(https?:)?\/\//i.test(src)||src.startsWith('data:'))return m;
+    const f=resolveLocalAsset(src,liveAll);
+    return (f!==null&&/^data:/.test(liveAll[f]||''))?pre+liveAll[f]+post:m;
+  });
+  // Pengaman: cegah gambar/SVG/ikon tanpa gaya membesar dan menutupi seluruh pratinjau
+  // ketika sebagian CSS gagal dimuat (mis. dari jaringan lambat) — bukan pengganti CSS asli.
+  const guardCss='<style>img,svg,picture,video{max-width:100%;height:auto}</style>';
+  html=/<head[^>]*>/i.test(html)?html.replace(/<head[^>]*>/i,m=>m+guardCss):guardCss+html;
   return html;
 }
 const PH_PRESETS={phone:{w:390,h:780},tablet:{w:600,h:820},desktop:{w:900,h:600}};
@@ -1688,6 +1717,7 @@ function runPreview(){
   }
   $('#preview-frame').srcdoc=html;
   outPrint('▶ Pratinjau dijalankan — <b>'+new Date().toLocaleTimeString('id-ID')+'</b>');
+  if(previewMissing.length)outPrint('⚠ Aset tidak ditemukan di proyek, dilewati: <b>'+previewMissing.map(esc).join(', ')+'</b>');
 }
 function closePreview(){$('#phone-preview').classList.remove('show');outPrint('■ Pratinjau ditutup');}
 function phRefresh(){
