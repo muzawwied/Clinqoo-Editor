@@ -84,6 +84,12 @@ svg{flex-shrink:0}
 #sidebar.hidden{display:none}
 #sb-resize{width:4px;cursor:col-resize;flex-shrink:0;background:transparent;transition:.15s}
 #sb-resize:hover{background:var(--accent)}
+#sb-collapse-btn{margin-left:auto}
+#sb-resize.hidden{display:none}
+#sb-reopen{position:fixed;left:0;top:96px;z-index:520;width:16px;height:52px;border-radius:0 9px 9px 0;background:var(--bg3);border:1px solid var(--line2);border-left:none;color:var(--text3);display:none;align-items:center;justify-content:center;cursor:pointer;box-shadow:2px 0 8px rgba(0,0,0,.18)}
+#sb-reopen:hover{color:var(--text);background:var(--bg4)}
+#sb-reopen.show{display:flex}
+@media (max-width:780px){#sb-reopen{display:none!important}}
 .panel-head{height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 8px 0 14px;flex-shrink:0}
 .panel-head .t{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text2)}
 .panel-head .tools{display:flex;gap:1px}
@@ -104,7 +110,9 @@ svg{flex-shrink:0}
 .tree-item .badge{font-size:9.5px;padding:1px 6px;border-radius:6px;background:var(--bg4);color:var(--text2);margin-right:4px}
 .tree-item .badge.M{background:rgba(182,182,194,.15);color:var(--text2)}
 .tree-item .badge.U{background:rgba(182,182,194,.15);color:var(--text2)}
-.tree-kids{margin-left:14px;border-left:1px solid var(--line);padding-left:2px}
+.tree-kids{position:relative;margin-left:11px;padding-left:9px}
+.tree-kids::before{content:'';position:absolute;left:0;top:0;bottom:0;width:1px;background:var(--line2)}
+.tree-kids:hover::before{background:var(--text3)}
 .empty-note{color:var(--text3);font-size:12px;padding:10px 8px;text-align:center;line-height:1.6}
 
 /* search panel */
@@ -382,7 +390,7 @@ body.light #statusbar{background:#131316}
 <!-- dropdown menus -->
 <div class="dropdown" id="m-file">
   <div class="dd-item" onclick="newFileModal()">Berkas Baru <span class="kbd">Ctrl+N</span></div>
-  <div class="dd-item" onclick="openFileModal()">Buka Berkas <span class="kbd">Ctrl+P</span></div>
+  <div class="dd-item" onclick="openPalette('files')">Buka Berkas <span class="kbd">Ctrl+P</span></div>
   <div class="dd-sep"></div>
   <div class="dd-item" onclick="saveActive()">Simpan <span class="kbd">Ctrl+S</span></div>
   <div class="dd-item" onclick="saveAll()">Simpan Semua <span class="kbd">Ctrl+K S</span></div>
@@ -452,6 +460,7 @@ body.light #statusbar{background:#131316}
     </button>
   </div>
 
+  <div id="sb-reopen" onclick="toggleSidebar()" title="Buka panel samping (Ctrl+B)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></div>
   <div id="sidebar">
     <div class="panel-head">
       <span class="t" id="sb-title">Explorer</span>
@@ -459,6 +468,7 @@ body.light #statusbar{background:#131316}
         <button class="ph-btn" onclick="newFileModal()" title="Berkas baru"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
         <button class="ph-btn" onclick="renderTree()" title="Segarkan"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/></svg></button>
         <button class="ph-btn" onclick="collapseAll()" title="Tutup semua"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg></button>
+        <button class="ph-btn" id="sb-collapse-btn" onclick="toggleSidebar()" title="Tutup panel samping (Ctrl+B)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path d="M14 10l-2 2 2 2"/></svg></button>
       </div>
     </div>
     <div class="panel-body">
@@ -1032,6 +1042,9 @@ function toggleSidebar(){
   }
   sbOpen=!sbOpen;
   $('#sidebar').classList.toggle('hidden',!sbOpen);
+  $('#sb-resize').classList.toggle('hidden',!sbOpen);
+  $('#sb-reopen').classList.toggle('show',!sbOpen);
+  try{localStorage.setItem('cc_sb_open',sbOpen?'1':'0');}catch(e){}
   if(sbOpen&&$$('.panel.show').length===0)showPanel('explorer');
 }
 function closeMobileSidebar(){
@@ -1258,36 +1271,68 @@ function phRefresh(){
 (function(){
   const pv=document.getElementById('phone-preview'),head=document.getElementById('ph-head'),rz=document.getElementById('ph-resize');
   if(!pv||!head)return;
-  let drag=false,sx=0,sy=0,ox=0,oy=0;
-  head.addEventListener('pointerdown',e=>{
+  // Drag & resize ditulis dengan listener di window (bukan di elemen itu sendiri) —
+  // pola ini lebih tahan banting di HP: setPointerCapture kadang tidak konsisten
+  // di beberapa browser mobile, sedangkan window-level move/up selalu jalan.
+  let drag=false,rs=false,sx=0,sy=0,ox=0,oy=0,sw=0,sh=0;
+
+  function pt(e){ // ambil koordinat dari pointer ATAU touch, apa pun yang tersedia
+    if(e.touches&&e.touches[0])return{x:e.touches[0].clientX,y:e.touches[0].clientY};
+    if(e.changedTouches&&e.changedTouches[0])return{x:e.changedTouches[0].clientX,y:e.changedTouches[0].clientY};
+    return{x:e.clientX,y:e.clientY};
+  }
+  function dragStart(e){
     if(e.target.closest('.ph-btn'))return;
-    drag=true;pv.classList.add('dragging');head.setPointerCapture(e.pointerId);
-    sx=e.clientX;sy=e.clientY;ox=pv.offsetLeft;oy=pv.offsetTop;e.preventDefault();
-  });
-  head.addEventListener('pointermove',e=>{
+    const p=pt(e);
+    drag=true;pv.classList.add('dragging');
+    sx=p.x;sy=p.y;ox=pv.offsetLeft;oy=pv.offsetTop;
+    if(e.cancelable)e.preventDefault();
+  }
+  function dragMove(e){
     if(!drag)return;
+    const p=pt(e);
     phState=phState||{};
-    phState.x=Math.max(24-pv.offsetWidth,Math.min(ox+e.clientX-sx,innerWidth-64));
-    phState.y=Math.max(0,Math.min(oy+e.clientY-sy,innerHeight-56));
+    phState.x=Math.max(24-pv.offsetWidth,Math.min(ox+p.x-sx,innerWidth-64));
+    phState.y=Math.max(0,Math.min(oy+p.y-sy,innerHeight-56));
     phApply();
-  });
-  const dEnd=()=>{if(drag){drag=false;pv.classList.remove('dragging');phSaveState();}};
-  head.addEventListener('pointerup',dEnd);head.addEventListener('pointercancel',dEnd);
+    if(e.cancelable)e.preventDefault();
+  }
+  function dragEnd(){if(drag){drag=false;pv.classList.remove('dragging');phSaveState();}}
+  head.addEventListener('pointerdown',dragStart);
+  head.addEventListener('touchstart',dragStart,{passive:false});
+  window.addEventListener('pointermove',dragMove);
+  window.addEventListener('touchmove',dragMove,{passive:false});
+  window.addEventListener('pointerup',dragEnd);
+  window.addEventListener('pointercancel',dragEnd);
+  window.addEventListener('touchend',dragEnd);
+  window.addEventListener('touchcancel',dragEnd);
+
   if(!rz)return;
-  let rs=false,sw=0,sh=0;
-  rz.addEventListener('pointerdown',e=>{
-    rs=true;pv.classList.add('resizing');rz.setPointerCapture(e.pointerId);
-    sw=pv.offsetWidth;sh=pv.offsetHeight;sx=e.clientX;sy=e.clientY;e.preventDefault();
-  });
-  rz.addEventListener('pointermove',e=>{
+  function rsStart(e){
+    rs=true;pv.classList.add('resizing');
+    const p=pt(e);
+    sw=pv.offsetWidth;sh=pv.offsetHeight;sx=p.x;sy=p.y;
+    if(e.cancelable)e.preventDefault();
+  }
+  function rsMove(e){
     if(!rs)return;
+    const p=pt(e);
     phState=phState||{};
-    phState.w=Math.max(280,Math.min(sw+e.clientX-sx,innerWidth-16));
-    phState.h=Math.max(320,Math.min(sh+e.clientY-sy,innerHeight-16));
+    phState.w=Math.max(280,Math.min(sw+p.x-sx,innerWidth-16));
+    phState.h=Math.max(320,Math.min(sh+p.y-sy,innerHeight-16));
     phApply();
-  });
-  const rEnd=()=>{if(rs){rs=false;pv.classList.remove('resizing');phSaveState();phRefresh();}};
-  rz.addEventListener('pointerup',rEnd);rz.addEventListener('pointercancel',rEnd);
+    if(e.cancelable)e.preventDefault();
+  }
+  function rsEnd(){if(rs){rs=false;pv.classList.remove('resizing');phSaveState();phRefresh();}}
+  rz.addEventListener('pointerdown',rsStart);
+  rz.addEventListener('touchstart',rsStart,{passive:false});
+  window.addEventListener('pointermove',rsMove);
+  window.addEventListener('touchmove',rsMove,{passive:false});
+  window.addEventListener('pointerup',rsEnd);
+  window.addEventListener('pointercancel',rsEnd);
+  window.addEventListener('touchend',rsEnd);
+  window.addEventListener('touchcancel',rsEnd);
+
   window.addEventListener('resize',()=>{if(pv.classList.contains('show')){phClamp();phApply();}});
 })();
 
@@ -1556,6 +1601,9 @@ $('#search-all').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();})
 
 /* ---------- Init ---------- */
 if(matchMedia('(max-width:780px)').matches){$('#bottom').classList.add('hidden');bottomOpen=false;}
+else if(localStorage.getItem('cc_sb_open')==='0'){
+  sbOpen=false;$('#sidebar').classList.add('hidden');$('#sb-resize').classList.add('hidden');$('#sb-reopen').classList.add('show');
+}
 project=loadProject();
 if(localStorage.getItem('cc_theme')==='light')document.body.classList.add('light');
 $('#sb-indent').textContent='Spasi: '+(localStorage.getItem('cc_tab')||'2');
