@@ -106,6 +106,14 @@ svg{flex-shrink:0}
 .panel-body{flex:1;overflow:auto;padding:6px 8px 14px;min-height:0}
 .panel{display:none}
 .panel.show{display:block}
+/* Menu Clincoo (Workspace / Agent) di bawah sidebar — gaya seperti menu di halaman workspace Clincoo */
+.sb-clincoo{border-top:1px solid var(--line);padding:8px;display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+.sb-clincoo .lbl{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);padding:2px 8px 4px}
+.sb-clincoo a{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:6px;font-size:12.8px;color:var(--text2);text-decoration:none;transition:.15s}
+.sb-clincoo a:hover{background:var(--bg4);color:var(--text)}
+.sb-clincoo a>svg:first-child{flex-shrink:0}
+.sb-clincoo a:hover>svg:first-child{color:var(--text)}
+.sb-clincoo .ext{margin-left:auto;opacity:.45;flex-shrink:0}
 
 /* file tree */
 .tree-item{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:12.8px;color:var(--text);white-space:nowrap;user-select:none}
@@ -587,7 +595,21 @@ body.light #statusbar{background:#131316}
         </div>
       </div>
 
+
     </div>
+      <div class="sb-clincoo">
+        <div class="lbl">Clincoo</div>
+        <a id="sb-link-workspace" href="https://muzawwied.github.io/Clincoo./proyek/workspace/" target="_blank" rel="noopener" title="Buka halaman Workspace Clincoo (tab baru)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></svg>
+          Workspace
+          <svg class="ext" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg>
+        </a>
+        <a id="sb-link-agent" href="https://muzawwied.github.io/Clincoo./proyek/chat/" target="_blank" rel="noopener" title="Buka halaman Agent Clincoo (tab baru)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="14" x="3" y="8" rx="2"/><path d="M12 5a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M12 5v3"/><path d="M8 14h.01"/><path d="M16 14h.01"/><path d="M10 18h4"/></svg>
+          Agent
+          <svg class="ext" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg>
+        </a>
+      </div>
   </div>
   <div id="sb-resize"></div>
 
@@ -926,6 +948,14 @@ let project, savedSnap;
 /* struktur berkas Clincoo (folder->[item]) dikonversi ke berkas rata.   */
 const _QP=new URLSearchParams(location.search);
 const LINK_PID=_QP.get('pid')||'';
+/* Menu Clincoo di sidebar: bawa id proyek aktif ke halaman Workspace / Agent Clincoo */
+(function(){
+  var b='https://muzawwied.github.io/Clincoo./';
+  var q=LINK_PID?('?id='+encodeURIComponent(LINK_PID)):'';
+  var w=document.getElementById('sb-link-workspace'),a=document.getElementById('sb-link-agent');
+  if(w)w.href=b+'proyek/workspace/'+q;
+  if(a)a.href=b+'proyek/chat/'+q;
+})();
 const LINK_NAME=_QP.get('name')||'Proyek';
 const WS_API='https://clincoo-be2.pages.dev/api/project-files';
 let linkedEmptyFolders=[],cloudTimer=null,cloudOk=null;
