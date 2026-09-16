@@ -1,10 +1,12 @@
-/* Clinqoo Editor — Layout: left sidebar files-only full height,
-   right sidebar = Workspace + Agent + Settings,
-   Chat AI = bottom button → separate page */
+/* Clinqoo Editor — Layout patch
+ * - Sidebar kiri: full height, HANYA file & folder (hide sb-clinqoo, hide AI panel)
+ * - Sidebar kanan (desktop): Workspace, Agent, Pengaturan
+ * - Chat AI: tombol bawah → halaman terpisah (bukan popup di editor)
+ * - Mobile: activity bar bawah disederhanakan (Explorer + Git saja)
+ */
 (function () {
   'use strict';
 
-  function $(s) { return document.querySelector(s); }
   function $$(s) { return Array.from(document.querySelectorAll(s)); }
 
   function injectCSS() {
@@ -12,12 +14,17 @@
     const style = document.createElement('style');
     style.id = 'layout-sidebar-css';
     style.textContent = `
-#sidebar{display:flex;flex-direction:column;height:100%;}
+/* Left sidebar: files only, full height */
+#sidebar{display:flex!important;flex-direction:column;height:100%;}
 #sidebar .panel-body{flex:1;min-height:0;overflow:auto;}
-#sidebar .sb-clinqoo{display:none!important;}
+#sidebar .sb-clinqoo{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;padding:0!important;border:none!important;}
 #p-ai{display:none!important;}
 .act-btn[data-panel="ai"]{display:none!important;}
 
+/* Hide settings gear from left activitybar (moved to right / mobile menu) */
+#activitybar > .act-btn[onclick*="openSettings"]{display:none!important;}
+
+/* Desktop right bar */
 #rightbar{
   width:52px;background:var(--bg2);border-left:1px solid var(--line);
   display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:4px;flex-shrink:0;
@@ -29,17 +36,27 @@
 #rightbar .rb-btn:hover{color:var(--text);background:var(--bg4);}
 #rightbar .spacer{flex:1;}
 
+/* Chat AI FAB — buka halaman terpisah */
 #ai-chat-fab{
-  position:fixed;bottom:52px;right:18px;z-index:800;
-  height:44px;padding:0 16px 0 14px;border-radius:22px;
+  position:fixed;bottom:58px;right:14px;z-index:850;
+  height:46px;padding:0 16px 0 14px;border-radius:23px;
   background:var(--btn-bg);color:#fff;font-weight:600;font-size:13px;
-  display:flex;align-items:center;gap:8px;box-shadow:var(--shadow);
+  display:flex;align-items:center;gap:8px;box-shadow:0 8px 28px rgba(0,0,0,.45);
   border:none;cursor:pointer;transition:.15s;
 }
 #ai-chat-fab:hover{filter:brightness(1.12);transform:translateY(-1px);}
+#ai-chat-fab svg{flex-shrink:0;}
+
+/* Mobile: simplify bottom activity bar — only explorer + git visible as primary */
 @media (max-width:780px){
-  #rightbar{display:none;}
-  #ai-chat-fab{bottom:64px;right:12px;}
+  #rightbar{display:none!important;}
+  #ai-chat-fab{bottom:70px;right:12px;}
+  /* Hide extra act buttons on mobile bottom bar to reduce "CTA" clutter */
+  #activitybar .act-btn[data-panel="db"],
+  #activitybar .act-btn[data-panel="api"],
+  #activitybar .act-btn[data-panel="ai"]{display:none!important;}
+  /* Keep explorer + git; settings stays hidden from left */
+  #sidebar{bottom:54px;}
 }
 `;
     document.head.appendChild(style);
@@ -85,11 +102,8 @@
       else if (typeof openSettingsDrawer === 'function') openSettingsDrawer();
     });
 
-    if (editorCol.nextSibling) {
-      main.insertBefore(rb, editorCol.nextSibling);
-    } else {
-      main.appendChild(rb);
-    }
+    if (editorCol.nextSibling) main.insertBefore(rb, editorCol.nextSibling);
+    else main.appendChild(rb);
 
     try {
       const pid = (typeof LINK_PID !== 'undefined' && LINK_PID)
@@ -108,20 +122,27 @@
     if (document.getElementById('ai-chat-fab')) return;
     const btn = document.createElement('button');
     btn.id = 'ai-chat-fab';
+    btn.type = 'button';
     btn.title = 'Buka Chat AI (halaman terpisah)';
-    btn.innerHTML = `
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg>
-      Chat AI
-    `;
+    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg> Chat AI';
     btn.addEventListener('click', openChatAIPage);
     document.body.appendChild(btn);
   }
 
   function hideLeftExtras() {
-    $$('.act-btn[data-panel="ai"]').forEach(b => { b.style.display = 'none'; });
-    $$('#activitybar .act-btn[onclick*="openSettings"]').forEach(b => { b.style.display = 'none'; });
-    $$('.sb-clinqoo').forEach(el => { el.style.display = 'none'; });
-    const pai = document.getElementById('p-ai');
+    // Force-hide clinqoo CTA block in left sidebar
+    $$('.sb-clinqoo').forEach(function (el) {
+      el.style.display = 'none';
+      el.style.visibility = 'hidden';
+      el.style.height = '0';
+      el.style.overflow = 'hidden';
+      el.style.padding = '0';
+      el.style.border = 'none';
+    });
+    // Hide AI panel + AI act button
+    $$('.act-btn[data-panel="ai"]').forEach(function (b) { b.style.display = 'none'; });
+    $$('#activitybar .act-btn[onclick*="openSettings"]').forEach(function (b) { b.style.display = 'none'; });
+    var pai = document.getElementById('p-ai');
     if (pai) pai.style.display = 'none';
   }
 
@@ -130,12 +151,15 @@
     hideLeftExtras();
     buildRightbar();
     buildFab();
+    // Re-hide after fullstack injects DB/API buttons (timing)
+    setTimeout(hideLeftExtras, 600);
+    setTimeout(hideLeftExtras, 1500);
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { setTimeout(boot, 200); });
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(boot, 150); });
   } else {
-    setTimeout(boot, 200);
+    setTimeout(boot, 150);
   }
 
   window.openChatAIPage = openChatAIPage;
