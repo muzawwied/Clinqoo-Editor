@@ -214,6 +214,16 @@ svg{flex-shrink:0}
 .sd-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--line);flex-shrink:0}
 .sd-title{font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px}
 .sd-body{flex:1;overflow-y:auto;padding:2px 16px 22px}
+.sd-menu{display:flex;flex-direction:column;gap:2px;margin-top:4px}
+.sd-mi{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;background:transparent;border:none;border-radius:10px;color:var(--text);cursor:pointer;text-align:left;transition:.13s}
+.sd-mi:hover{background:var(--bg2)}
+.sd-mi:active{transform:scale(.985)}
+.sd-mi svg{flex-shrink:0;color:var(--accent)}
+.sd-mi-t{display:flex;flex-direction:column;gap:1px;min-width:0}
+.sd-mi-t b{font-size:13px;font-weight:600}
+.sd-mi-t span{font-size:11px;color:var(--text2)}
+.sd-back{display:block;width:100%;margin:8px 0 10px;padding:7px 10px;background:var(--bg2);border:none;border-radius:8px;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;text-align:left}
+.sd-back:hover{color:var(--text);border:1px solid var(--line)}
 .sd-sec{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin:16px 0 2px}
 .sd-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--text)}
 .sd-row .sd-l{display:flex;flex-direction:column;gap:2px;min-width:0}
@@ -759,7 +769,7 @@ body.light #titlebar,body.light #sidebar{background:rgba(238,238,241,.93);backdr
 </div></div>
 
 <div id="settings-drawer" aria-hidden="true">
-  <div class="sd-head"><span class="sd-title">⚙ Pengaturan</span><button class="ph-btn" onclick="closeSettingsDrawer()" title="Tutup (Esc)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+  <div class="sd-head"><span class="sd-title"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:-2px;margin-right:4px"><path d="M3 6h18M3 12h18M3 18h18"/></svg>Menu</span><button class="ph-btn" onclick="closeSettingsDrawer()" title="Tutup (Esc)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
   <div class="sd-body" id="sd-body"></div>
 </div>
 <div id="overlay-modal"></div>
@@ -2406,13 +2416,42 @@ function doReset(){
 }
 
 /* ---------- Settings ---------- */
-function openSettings(){openSettingsPanel();}
+function openSettings(){openDrawerMenu();}
+const SD_ICONS={
+  home:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V21h-6v-6h-6v6H3z"/></svg>',
+  files:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
+  play:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l14 8-14 8z"/></svg>',
+  phone:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2" width="10" height="20" rx="2.5"/></svg>',
+  theme:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+  down:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>',
+  gear:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  reset:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>'
+};
+function openDrawerMenu(){
+  const body=$('#sd-body');if(!body)return;
+  const mi=(icon,title,sub,fn)=>`<button class="sd-mi" onclick="${fn}">${SD_ICONS[icon]||''}<span class="sd-mi-t"><b>${title}</b>${sub?`<span>${sub}</span>`:''}</span></button>`;
+  body.innerHTML=
+    '<div class="sd-sec">Menu</div>'+
+    '<div class="sd-menu">'+
+    mi('home','Halaman Utama','Kembali ke layar sambutan','showWelcome();closeSettingsDrawer()')+
+    mi('files','Buka Berkas','Cari & buka berkas proyek',"closeSettingsDrawer();openPalette('files')")+
+    mi('play','Jalankan Pratinjau','Menjalankan proyek (F5)','closeSettingsDrawer();runPreview()')+
+    mi('phone','Pratinjau ala HP','Lihat hasil dalam bingkai ponsel',"closeSettingsDrawer();runPreview();setTimeout(()=>phPreset('phone'),150)")+
+    mi('theme','Ganti Tema','Gelap atau terang','toggleTheme()')+
+    mi('down','Unduh Proyek','Simpan sebagai .zip','closeSettingsDrawer();downloadZip()')+
+    mi('gear','Pengaturan Editor','Font, indentasi, dan lainnya','openSettingsPanel()')+
+    mi('reset','Reset Proyek','Kembalikan ke contoh awal','resetProject()')+
+    '</div>'+
+    '<div class="cloud-note" style="margin-top:14px">Pintasan: Ctrl+P cari berkas • Ctrl+B panel samping • F5 pratinjau • Ctrl+, menu</div>';
+  $('#settings-drawer').classList.add('show');
+}
 function openSettingsPanel(){
   const body=$('#sd-body');if(!body)return;
   const fs=localStorage.getItem('cc_font')||14;
   const sw=(id,on,fn)=>`<label class="switch"><input type="checkbox" ${on?'checked':''} onchange="${fn}"><span class="sl"></span></label>`;
   const row=(title,sub,ctrl)=>`<div class="sd-row"><div class="sd-l"><b>${title}</b>${sub?`<span>${sub}</span>`:''}</div>${ctrl}</div>`;
   body.innerHTML=
+    '<button class="sd-back" onclick="openSettings()">‹ Kembali ke Menu</button>'+
     '<div class="sd-sec">Tampilan</div>'+
     row('Tema terang', 'Ubah tema antara gelap & terang', sw('theme',document.body.classList.contains('light'),'toggleTheme();renderSettingsPanel()'))+
     row('Ukuran font', 'Ukuran teks editor', `<div class="sd-range"><input type="range" min="11" max="22" step="0.5" value="${fs}" oninput="setFontSize(this.value)"><b id="sd-fs-val">${fs}</b></div>`)+
@@ -2627,7 +2666,7 @@ window.addEventListener('keydown',e=>{
   if(chordK&&!mod&&e.key.toLowerCase()==='s'){e.preventDefault();chordK=false;clearTimeout(chordT);saveAll();return;}
   if(mod&&e.shiftKey&&e.key.toLowerCase()==='s'){e.preventDefault();saveAll();return;}
   if(mod&&!e.shiftKey&&e.key.toLowerCase()==='n'){e.preventDefault();newFileModal();}
-  if(mod&&e.key===','){e.preventDefault();openSettingsPanel();}
+  if(mod&&e.key===','){e.preventDefault();openSettings();}
 },true);
 
 /* ---------- Init ---------- */
