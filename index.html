@@ -1985,6 +1985,10 @@ async function aiSend(){
 /* ---------- Sistem Pages: Chat AI & Templates ---------- */
 function closePages(){$$('.page').forEach(p=>p.classList.remove('show'));}
 function openChatPage(){closePages();$('#page-chat').classList.add('show');chatBoot();}
+document.addEventListener('DOMContentLoaded',()=>{
+  const bc=document.getElementById('btn-chat');
+  if(bc)bc.addEventListener('click',e=>{e.stopPropagation();openChatPage();});
+});
 function openTemplatesPage(){closePages();$('#page-templates').classList.add('show');renderTemplates();}
 
 /* ----- Chat AI ----- */
