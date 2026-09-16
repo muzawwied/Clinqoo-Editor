@@ -14,6 +14,16 @@ Editor kode full-stack di browser untuk proyek Clinqoo. Semua fitur nyata dan be
 - Terminal csh nyata: ls/tree/cd/cat/mkdir/mv/cp/rm/echo>/find/stat/grep/wc/git/npm, riwayat perintah ↑↓
 - Palette perintah (Ctrl+Shift+P) & buka cepat berkas (Ctrl+P), tema terang/gelap, Mode Zen, Pengaturan lengkap
 
+### Full-stack extras (baru)
+- **Database panel** — key-value store lokal per proyek
+- **API Tester** — kirim request HTTP nyata, lihat response
+- File terpisah: `fullstack.js` (tidak mengubah style inti)
+
+Untuk mengaktifkan: pastikan baris berikut ada sebelum `</body>` di `index.html`:
+```html
+<script src="fullstack.js" defer></script>
+```
+
 ## Shortcut
 Ctrl+S simpan · Ctrl+Shift+S / Ctrl+K S simpan semua · Ctrl+N berkas baru · Ctrl+P buka berkas · Ctrl+B panel · Ctrl+` terminal · Ctrl+G ke baris · F5 pratinjau
 
@@ -21,4 +31,6 @@ Ctrl+S simpan · Ctrl+Shift+S / Ctrl+K S simpan semua · Ctrl+N berkas baru · C
 Editor dibuka dari halaman proyek Clinqoo dengan `?pid=…&name=…`. Berkas tersinkron dua arah: localStorage lintas tab + cloud D1 Clinqoo, dengan push terakhir saat halaman ditutup.
 
 ## Struktur
-Satu berkas `index.html` (vanilla, tanpa build) — dibuka langsung atau di-host statis.
+- `index.html` — editor utama (vanilla)
+- `fullstack.js` — ekstensi Database + API Tester
+- `assets/` — ikon & favicon
