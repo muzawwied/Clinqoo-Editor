@@ -68,6 +68,7 @@
   }
 
   function openChatAIPage() {
+    if (typeof openChatPage === 'function') { openChatPage(); return; }
     try {
       const pid = (typeof LINK_PID !== 'undefined' && LINK_PID)
         ? LINK_PID
@@ -128,7 +129,7 @@
     const btn = document.createElement('button');
     btn.id = 'ai-chat-fab';
     btn.type = 'button';
-    btn.title = 'Buka Chat AI (halaman terpisah)';
+    btn.title = 'Buka Chat AI';
     btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg> Chat AI';
     btn.addEventListener('click', openChatAIPage);
     document.body.appendChild(btn);
