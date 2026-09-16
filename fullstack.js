@@ -1,14 +1,24 @@
 /* Clinqoo Editor Full-stack extensions (Database + API Tester)
  * Loaded separately so main index.html style stays untouched.
+ * Also loads layout-sidebar.js for the new sidebar layout.
  */
 (function () {
   'use strict';
+  // Load layout sidebar patch (left = files only, right = Workspace/Agent/Settings, Chat AI FAB)
+  (function loadLayout() {
+    if (document.querySelector('script[src*="layout-sidebar"]')) return;
+    var s = document.createElement('script');
+    s.src = 'layout-sidebar.js';
+    s.defer = true;
+    document.head.appendChild(s);
+  })();
+
   function $(sel) { return document.querySelector(sel); }
   function $$(sel) { return Array.from(document.querySelectorAll(sel)); }
   function esc(s) {
     return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      .replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>')
+      .replace(/"/g, '"').replace(/'/g, '&#39;');
   }
   function dbStoreKey() {
     return 'clinqoo_db_' + (typeof LINK_PID !== 'undefined' && LINK_PID ? LINK_PID : 'local');
