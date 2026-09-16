@@ -8,7 +8,7 @@
   (function loadLayout() {
     if (document.querySelector('script[src*="layout-sidebar"]')) return;
     var s = document.createElement('script');
-    s.src = 'layout-sidebar.js';
+    s.src = 'layout-sidebar.js?v=20260917';
     s.defer = true;
     document.head.appendChild(s);
   })();
