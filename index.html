@@ -1483,10 +1483,12 @@ function showPanel(name){
   $('#sb-title').textContent={explorer:'Explorer',git:'Kontrol Sumber',ai:'AI Koding'}[name]||name;
   if(name==='ai')aiBoot();
 }
-$$('.act-btn').forEach(b=>b.onclick=()=>{
+$$('.act-btn').forEach(b=>{
   if(!b.dataset.panel)return;
-  if(b.classList.contains('active')&&sbOpen){$('#sidebar').classList.add('hidden');sbOpen=false;}
-  else showPanel(b.dataset.panel);
+  b.onclick=()=>{
+    if(b.classList.contains('active')&&sbOpen){$('#sidebar').classList.add('hidden');sbOpen=false;}
+    else showPanel(b.dataset.panel);
+  };
 });
 const isMobile=()=>matchMedia('(max-width:780px)').matches;
 function toggleSidebar(){
