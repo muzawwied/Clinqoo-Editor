@@ -14,8 +14,13 @@
     const style = document.createElement('style');
     style.id = 'layout-sidebar-css';
     style.textContent = `
-/* Left sidebar: files only, full height */
-#sidebar{display:flex!important;flex-direction:column;height:100%;}
+/* Left sidebar: files only, full height — boleh ditutup (jangan paksa display !important) */
+#sidebar{flex-direction:column;height:100%;}
+#sidebar.hidden{display:none!important;}
+@media (max-width:780px){
+  #sidebar{display:none!important;}
+  #sidebar.mobile-open{display:flex!important;}
+}
 #sidebar .panel-body{flex:1;min-height:0;overflow:auto;}
 #sidebar .sb-clinqoo{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;padding:0!important;border:none!important;}
 #p-ai{display:none!important;}
