@@ -1,4 +1,4 @@
-/* Clinqoo Editor — Layout patch
+/* Clincoo Editor — Layout patch
  * - Sidebar kiri: full height, HANYA file & folder (hide sb-clinqoo, hide AI panel)
  * - Sidebar kanan (desktop): Workspace, Agent, Pengaturan
  * - Chat AI: tombol bawah → halaman terpisah (bukan popup di editor)
