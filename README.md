@@ -14,23 +14,36 @@ Editor kode full-stack di browser untuk proyek Clincoo. Semua fitur nyata dan be
 - Terminal csh nyata: ls/tree/cd/cat/mkdir/mv/cp/rm/echo>/find/stat/grep/wc/git/npm, riwayat perintah ↑↓
 - Palette perintah (Ctrl+Shift+P) & buka cepat berkas (Ctrl+P), tema terang/gelap, Mode Zen, Pengaturan lengkap
 
-### Full-stack extras (baru)
+### Full-stack extras
 - **Database panel** — key-value store lokal per proyek
 - **API Tester** — kirim request HTTP nyata, lihat response
-- File terpisah: `fullstack.js` (tidak mengubah style inti)
+- File: `fullstack.js`
 
-Untuk mengaktifkan: pastikan baris berikut ada sebelum `</body>` di `index.html`:
+### Enhancements (baru, sumber GitHub)
+- **Snippet cepat** — panel sisip HTML/CSS/JS siap pakai
+- **Problems** — scan ringan (img tanpa alt, TODO, console.log, eval, !important)
+- **Keyboard cheat-sheet** — Ctrl+/ atau ?
+- **AI inline** — pilih teks → tombol Perbaiki / Jelaskan / Refactor ke panel AI
+- File: `enhancements.js` (belum otomatis ke editor.clincoo.buzz sampai di-deploy manual)
+
+Untuk mengaktifkan:
 ```html
 <script src="fullstack.js" defer></script>
+<script src="enhancements.js" defer></script>
 ```
 
 ## Shortcut
-Ctrl+S simpan · Ctrl+Shift+S / Ctrl+K S simpan semua · Ctrl+N berkas baru · Ctrl+P buka berkas · Ctrl+B panel · Ctrl+` terminal · Ctrl+G ke baris · F5 pratinjau
+Ctrl+S simpan · Ctrl+Shift+S / Ctrl+K S simpan semua · Ctrl+N berkas baru · Ctrl+P buka berkas · Ctrl+B panel · Ctrl+` terminal · Ctrl+G ke baris · F5 pratinjau · **Ctrl+/ cheat-sheet**
 
 ## Sinkronisasi proyek Clincoo
 Editor dibuka dari halaman proyek Clincoo dengan `?pid=…&name=…`. Berkas tersinkron dua arah: localStorage lintas tab + cloud D1 Clincoo, dengan push terakhir saat halaman ditutup.
 
 ## Struktur
 - `index.html` — editor utama (vanilla)
-- `fullstack.js` — ekstensi Database + API Tester
+- `fullstack.js` — Database + API Tester
+- `enhancements.js` — Snippets, Problems, cheat-sheet, AI inline
 - `assets/` — ikon & favicon
+
+## Deploy
+- Sumber: repo GitHub `muzawwied/Clinqoo-Editor`
+- Live produksi saat ini: `editor.clincoo.buzz` (deploy manual — jangan anggap commit GitHub langsung mengubah domain itu)
